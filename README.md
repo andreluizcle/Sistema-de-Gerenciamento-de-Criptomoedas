@@ -1,4 +1,4 @@
-# 💼 Sistema de Carteira de Criptomoedas — POO
+# 💼 Sistema de Carteira de Criptomoedas
 
 > Projeto desenvolvido para a disciplina de **Programação Orientada a Objetos** — Faculdade de Tecnologia (UNICAMP)
 
