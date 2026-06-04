@@ -1,52 +1,87 @@
-package java.view;
+package br.unicamp.ftcoin.view;
 
-import java.MessageProvider;
-import java.dto.Carteira;
-import java.util.List;
-import java.util.Scanner;
+import br.unicamp.ftcoin.dto.Carteira;
+import br.unicamp.ftcoin.util.Console;
+import br.unicamp.ftcoin.util.MessageProvider;
 
-public class CarteiraView {
-    private Scanner scanner;
-
-    public CarteiraView() {
-        this.scanner = new Scanner(System.in);
-    }
+//Tela de Carteira
+public class CarteiraView extends ViewBase {
 
     public int exibirMenu() {
-        System.out.println("\n" + MessageProvider.get("wallet.title"));
-        System.out.println(MessageProvider.get("wallet.add"));
-        System.out.println(MessageProvider.get("wallet.list"));
-        System.out.println("0. Voltar");
-        System.out.print(MessageProvider.get("menu.option") + " ");
-        
-        try {
-            return Integer.parseInt(scanner.nextLine());
-        } catch (NumberFormatException e) {
-            return -1;
+        cabecalho("menu.carteira.titulo");
+        System.out.println(MessageProvider.get("menu.carteira.1"));
+        System.out.println(MessageProvider.get("menu.carteira.2"));
+        System.out.println(MessageProvider.get("menu.carteira.3"));
+        System.out.println(MessageProvider.get("menu.carteira.4"));
+        System.out.println(MessageProvider.get("menu.carteira.0"));
+        return lerInteiro("menu.principal.escolha");
+    }
+
+    public Carteira lerDadosCarteira() {
+        int id = lerInteiro("carteira.entrada.id");
+        if (id == Integer.MIN_VALUE || id <= 0) {
+            return null;
         }
+        String nome = lerLinha("carteira.entrada.nome");
+        String corretora = lerLinha("carteira.entrada.corretora");
+        if (nome.isEmpty() || corretora.isEmpty()) {
+            return null;
+        }
+        return new Carteira(id, nome, corretora);
     }
 
-    public String solicitarNomeCarteira() {
-        System.out.print(MessageProvider.get("wallet.name") + " ");
-        return scanner.nextLine();
+    public int lerIdConsulta() {
+        return lerInteiro("carteira.entrada.id.consulta");
     }
 
-    public void listarCarteiras(List<Carteira> carteiras) {
-        System.out.println("\n--- Lista de Carteiras ---");
-        if (carteiras.isEmpty()) {
-            System.out.println("Nenhuma carteira cadastrada.");
+    public int lerIdEdicao() {
+        return lerInteiro("carteira.entrada.id.editar");
+    }
+
+    public int lerIdExclusao() {
+        return lerInteiro("carteira.entrada.id.excluir");
+    }
+
+    public String lerNovoNome() {
+        return lerLinha("carteira.entrada.nome.novo");
+    }
+
+    public String lerNovaCorretora() {
+        return lerLinha("carteira.entrada.corretora.nova");
+    }
+
+    public boolean confirmarExclusao(int id) {
+        return confirmar(MessageProvider.get("carteira.msg.excluir.confirma", id));
+    }
+
+    public void exibirCarteira(Carteira c) {
+        Console.info(MessageProvider.get("carteira.msg.encontrada") + " " + c.toString());
+    }
+
+    //Dados cadastrais da carteira + saldo em moeda virtual
+    
+    public void exibirCarteiraCompleta(Carteira c,
+                                       java.math.BigDecimal saldo,
+                                       java.math.BigDecimal valorReal,
+                                       br.unicamp.ftcoin.dto.Oraculo cotacao) {
+        Console.info(MessageProvider.get("carteira.msg.encontrada") + " " + c.toString());
+        Console.info(MessageProvider.get("carteira.msg.saldo",
+                saldo.setScale(8, java.math.RoundingMode.HALF_UP).toPlainString()));
+        if (cotacao != null) {
+            Console.info(MessageProvider.get("carteira.msg.valor.atual",
+                    valorReal.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
+                    cotacao.getCotacao().toPlainString(),
+                    cotacao.getData().toString()));
         } else {
-            for (Carteira c : carteiras) {
-                System.out.println(c.toString());
-            }
+            Console.aviso(MessageProvider.get("oraculo.cotacao.indisponivel"));
         }
     }
 
-    public void exibirSucesso() {
-        System.out.println(MessageProvider.get("msg.success"));
+    public void mensagemSucesso(String chave) {
+        Console.sucesso(MessageProvider.get(chave));
     }
 
-    public void exibirMensagemInvalida() {
-        System.out.println(MessageProvider.get("msg.invalid"));
+    public void mensagemErro(String chave) {
+        Console.erro(MessageProvider.get(chave));
     }
 }
