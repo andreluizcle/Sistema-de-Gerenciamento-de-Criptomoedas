@@ -1,58 +1,70 @@
-package java.dao.local;
+package br.unicamp.ftcoin.dao.memory;
 
-import java.dao.interface.IMovimentacaoDAO;
-import java.dto.Movimentacao;
-import java.io.*;
+import br.unicamp.ftcoin.dao.interfaces.IMovimentacaoDAO;
+import br.unicamp.ftcoin.dto.Movimentacao;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
-public class MovimentacaoLocalDAO implements IMovimentacaoDAO {
+/**
+ * Implementação em memória do DAO de Movimentacao.
+ */
+public class MovimentacaoMemoryDAO implements IMovimentacaoDAO {
 
-    private static final String FILE_PATH = "movimentacoes.dat";
+    private final Map<Integer, Movimentacao> banco = new HashMap<>();
+    private int sequencia = 0;
 
     @Override
-    public void salvar(Movimentacao movimentacao) {
-        List<Movimentacao> movimentacoes = listarTodas();
-        
-        // Auto-incremento do ID
-        int novoId = movimentacoes.stream()
-                                  .mapToInt(Movimentacao::getId)
-                                  .max()
-                                  .orElse(0) + 1;
-        movimentacao.setId(novoId);
-        
-        movimentacoes.add(movimentacao);
-        salvarNoArquivo(movimentacoes);
+    public boolean inserir(Movimentacao movimentacao) {
+        if (movimentacao == null || banco.containsKey(movimentacao.getIdMovimento())) {
+            return false;
+        }
+        banco.put(movimentacao.getIdMovimento(), movimentacao);
+        if (movimentacao.getIdMovimento() > sequencia) {
+            sequencia = movimentacao.getIdMovimento();
+        }
+        return true;
     }
 
     @Override
-    public List<Movimentacao> buscarPorCarteira(int carteiraId) {
-        return listarTodas().stream()
-                            .filter(m -> m.getCarteiraId() == carteiraId)
-                            .collect(Collectors.toList());
+    public Movimentacao consultar(int idMovimento) {
+        return banco.get(idMovimento);
     }
 
     @Override
     public List<Movimentacao> listarTodas() {
-        File arquivo = new File(FILE_PATH);
-        if (!arquivo.exists()) {
-            return new ArrayList<>();
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(arquivo))) {
-            return (List<Movimentacao>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("Erro ao ler movimentações locais: " + e.getMessage());
-            return new ArrayList<>();
-        }
+        return new ArrayList<>(banco.values());
     }
 
-    private void salvarNoArquivo(List<Movimentacao> movimentacoes) {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_PATH))) {
-            oos.writeObject(movimentacoes);
-        } catch (IOException e) {
-            System.err.println("Erro ao salvar movimentação localmente: " + e.getMessage());
+    @Override
+    public List<Movimentacao> listarPorCarteira(int idCarteira) {
+        List<Movimentacao> resultado = new ArrayList<>();
+        for (Movimentacao m : banco.values()) {
+            if (m.getIdCarteira() == idCarteira) {
+                resultado.add(m);
+            }
         }
+        return resultado;
+    }
+
+    @Override
+    public boolean excluirPorCarteira(int idCarteira) {
+        List<Integer> aRemover = new ArrayList<>();
+        for (Movimentacao m : banco.values()) {
+            if (m.getIdCarteira() == idCarteira) {
+                aRemover.add(m.getIdMovimento());
+            }
+        }
+        for (Integer id : aRemover) {
+            banco.remove(id);
+        }
+        return !aRemover.isEmpty();
+    }
+
+    @Override
+    public int proximoId() {
+        return ++sequencia;
     }
 }
