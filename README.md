@@ -71,9 +71,10 @@ src/
     │       └── OraculoRelationalDAO.java
     ├── MessageProvider.java    # Internacionalização / tradução
     └── Start.java              # Ponto de entrada da aplicação
-└── resources/
-    ├── message_en_US.properties
-    └── message_pt_BR.properties
+└── main/
+    └── resources/
+        ├── message_en_US.properties
+        └── message_pt_BR.properties
 ```
 
 ---
@@ -155,24 +156,26 @@ ftcoin/
 
 **Windows:**
 ```cmd
-javac -cp "lib/mariadb-java-client-3.4.0.jar;lib/slf4j-nop-2.0.13.jar;lib/slf4j-api-2.0.13.jar" -d out src/java/**/*.java
+mkdir out
+javac -cp "lib/mariadb-java-client-3.4.0.jar;lib/slf4j-nop-2.0.13.jar;lib/slf4j-api-2.0.13.jar" -d out src/main/java/**/*.java
 ```
 
 **Linux / macOS:**
 ```bash
-javac -cp "lib/mariadb-java-client-3.4.0.jar:lib/slf4j-nop-2.0.13.jar:lib/slf4j-api-2.0.13.jar" -d out src/java/**/*.java
+mkdir -p out
+javac -cp "lib/mariadb-java-client-3.4.0.jar:lib/slf4j-nop-2.0.13.jar:lib/slf4j-api-2.0.13.jar" -d out $(find src -name "*.java")
 ```
 
 ### 4. Execute
 
 **Windows:**
 ```cmd
-java -cp "out;lib/mariadb-java-client-3.4.0.jar;lib/slf4j-nop-2.0.13.jar;lib/slf4j-api-2.0.13.jar" Start
+java -cp "out;src/main/resources;lib/mariadb-java-client-3.4.0.jar;lib/slf4j-nop-2.0.13.jar;lib/slf4j-api-2.0.13.jar" br.unicamp.ftcoin.Start
 ```
 
 **Linux / macOS:**
 ```bash
-java -cp "out:lib/mariadb-java-client-3.4.0.jar:lib/slf4j-nop-2.0.13.jar:lib/slf4j-api-2.0.13.jar" Start
+java -cp "out:src/main/resources:lib/mariadb-java-client-3.4.0.jar:lib/slf4j-nop-2.0.13.jar:lib/slf4j-api-2.0.13.jar" br.unicamp.ftcoin.Start
 ```
 
 ---
