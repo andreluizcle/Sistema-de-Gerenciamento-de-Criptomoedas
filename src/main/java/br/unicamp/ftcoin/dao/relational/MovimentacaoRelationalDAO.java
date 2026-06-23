@@ -8,6 +8,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,18 +20,30 @@ public class MovimentacaoRelationalDAO implements IMovimentacaoDAO {
 
     @Override
     public boolean inserir(Movimentacao movimentacao) {
-        String sql = "INSERT INTO movimentacao (id_movimento, id_carteira, data_operacao, tipo_operacao, quantidade) " +
-                "VALUES (?, ?, ?, ?, ?)";
+        // IdMovimento é AUTO_INCREMENT — não incluímos na lista de colunas
+        String sql = "INSERT INTO MOVIMENTACAO (IdCarteira, Data, TipoOperacao, Quantidade) " +
+                "VALUES (?, ?, ?, ?)";
         Connection conexao = null;
         try {
             conexao = DatabaseConnection.abrir();
-            try (PreparedStatement ps = conexao.prepareStatement(sql)) {
-                ps.setInt(1, movimentacao.getIdMovimento());
-                ps.setInt(2, movimentacao.getIdCarteira());
-                ps.setDate(3, Date.valueOf(movimentacao.getDataOperacao()));
-                ps.setString(4, String.valueOf(movimentacao.getTipoOperacao()));
-                ps.setBigDecimal(5, movimentacao.getQuantidade());
-                return ps.executeUpdate() > 0;
+            // RETURN_GENERATED_KEYS solicita ao driver JDBC que retorne
+            // as chaves geradas automaticamente pelo AUTO_INCREMENT
+            try (PreparedStatement ps = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setInt(1, movimentacao.getIdCarteira());
+                ps.setDate(2, Date.valueOf(movimentacao.getDataOperacao()));
+                ps.setString(3, String.valueOf(movimentacao.getTipoOperacao()));
+                ps.setBigDecimal(4, movimentacao.getQuantidade());
+                int linhas = ps.executeUpdate();
+                if (linhas > 0) {
+                    // Recupera o ID gerado pelo MariaDB e atualiza o objeto em memória
+                    try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            movimentacao.setIdMovimento(generatedKeys.getInt(1));
+                        }
+                    }
+                    return true;
+                }
+                return false;
             }
         } catch (SQLException e) {
             System.err.println("Erro ao inserir movimentacao: " + e.getMessage());
@@ -42,8 +55,8 @@ public class MovimentacaoRelationalDAO implements IMovimentacaoDAO {
 
     @Override
     public Movimentacao consultar(int idMovimento) {
-        String sql = "SELECT id_movimento, id_carteira, data_operacao, tipo_operacao, quantidade " +
-                "FROM movimentacao WHERE id_movimento = ?";
+        String sql = "SELECT IdMovimento, IdCarteira, Data, TipoOperacao, Quantidade " +
+                "FROM MOVIMENTACAO WHERE IdMovimento = ?";
         Connection conexao = null;
         try {
             conexao = DatabaseConnection.abrir();
@@ -66,7 +79,7 @@ public class MovimentacaoRelationalDAO implements IMovimentacaoDAO {
 
     @Override
     public List<Movimentacao> listarTodas() {
-        String sql = "SELECT id_movimento, id_carteira, data_operacao, tipo_operacao, quantidade FROM movimentacao";
+        String sql = "SELECT IdMovimento, IdCarteira, Data, TipoOperacao, Quantidade FROM MOVIMENTACAO";
         List<Movimentacao> resultado = new ArrayList<>();
         Connection conexao = null;
         try {
@@ -87,8 +100,8 @@ public class MovimentacaoRelationalDAO implements IMovimentacaoDAO {
 
     @Override
     public List<Movimentacao> listarPorCarteira(int idCarteira) {
-        String sql = "SELECT id_movimento, id_carteira, data_operacao, tipo_operacao, quantidade " +
-                "FROM movimentacao WHERE id_carteira = ?";
+        String sql = "SELECT IdMovimento, IdCarteira, Data, TipoOperacao, Quantidade " +
+                "FROM MOVIMENTACAO WHERE IdCarteira = ?";
         List<Movimentacao> resultado = new ArrayList<>();
         Connection conexao = null;
         try {
@@ -111,7 +124,7 @@ public class MovimentacaoRelationalDAO implements IMovimentacaoDAO {
 
     @Override
     public boolean excluirPorCarteira(int idCarteira) {
-        String sql = "DELETE FROM movimentacao WHERE id_carteira = ?";
+        String sql = "DELETE FROM MOVIMENTACAO WHERE IdCarteira = ?";
         Connection conexao = null;
         try {
             conexao = DatabaseConnection.abrir();
@@ -129,7 +142,10 @@ public class MovimentacaoRelationalDAO implements IMovimentacaoDAO {
 
     @Override
     public int proximoId() {
-        String sql = "SELECT COALESCE(MAX(id_movimento), 0) + 1 AS proximo FROM movimentacao";
+        // Obsoleto com AUTO_INCREMENT — mantido para compatibilidade com
+        // a interface IMovimentacaoDAO e a implementação em memória.
+        // Na implementação relacional, o ID é gerado pelo banco.
+        String sql = "SELECT COALESCE(MAX(IdMovimento), 0) + 1 AS proximo FROM MOVIMENTACAO";
         Connection conexao = null;
         try {
             conexao = DatabaseConnection.abrir();
@@ -148,14 +164,14 @@ public class MovimentacaoRelationalDAO implements IMovimentacaoDAO {
     }
 
     private Movimentacao mapear(ResultSet rs) throws SQLException {
-        String tipoStr = rs.getString("tipo_operacao");
+        String tipoStr = rs.getString("TipoOperacao");
         char tipo = (tipoStr == null || tipoStr.isEmpty()) ? Movimentacao.COMPRA : tipoStr.charAt(0);
         return new Movimentacao(
-                rs.getInt("id_movimento"),
-                rs.getInt("id_carteira"),
-                rs.getDate("data_operacao").toLocalDate(),
+                rs.getInt("IdMovimento"),
+                rs.getInt("IdCarteira"),
+                rs.getDate("Data").toLocalDate(),
                 tipo,
-                rs.getBigDecimal("quantidade")
+                rs.getBigDecimal("Quantidade")
         );
     }
 }

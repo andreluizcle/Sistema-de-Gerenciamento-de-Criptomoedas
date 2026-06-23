@@ -19,17 +19,16 @@ public class CarteiraView extends ViewBase {
         return lerInteiro("menu.principal.escolha");
     }
 
+    /**
+     * Le os dados de uma nova carteira (sem ID, gerado por AUTO_INCREMENT).
+     */
     public Carteira lerDadosCarteira() {
-        int id = lerInteiro("carteira.entrada.id");
-        if (id == Integer.MIN_VALUE || id <= 0) {
-            return null;
-        }
         String nome = lerLinha("carteira.entrada.nome");
         String corretora = lerLinha("carteira.entrada.corretora");
         if (nome.isEmpty() || corretora.isEmpty()) {
             return null;
         }
-        return new Carteira(id, nome, corretora);
+        return new Carteira(0, nome, corretora);
     }
 
     public int lerIdConsulta() {

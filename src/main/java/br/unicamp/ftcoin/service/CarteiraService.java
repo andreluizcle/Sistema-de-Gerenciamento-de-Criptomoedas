@@ -22,8 +22,12 @@ public class CarteiraService {
         this.movimentacaoDAO = movimentacaoDAO;
     }
 
+    /**
+     * Inclui uma nova carteira. Usa validacao sem exigir ID,
+     * pois o ID sera gerado pelo AUTO_INCREMENT do banco.
+     */
     public boolean incluir(Carteira carteira) {
-        if (!validar(carteira)) {
+        if (!validarInsercao(carteira)) {
             return false;
         }
         return carteiraDAO.inserir(carteira);
@@ -73,6 +77,14 @@ public class CarteiraService {
         return carteiraDAO.listarTodas();
     }
 
+    /** Validacao para insercao: nao exige ID (sera gerado pelo AUTO_INCREMENT). */
+    private boolean validarInsercao(Carteira carteira) {
+        return carteira != null
+                && carteira.getNomeTitular() != null && !carteira.getNomeTitular().trim().isEmpty()
+                && carteira.getCorretora() != null && !carteira.getCorretora().trim().isEmpty();
+    }
+
+    /** Validacao completa: exige ID valido (para atualizacao). */
     private boolean validar(Carteira carteira) {
         return carteira != null
                 && carteira.getId() > 0

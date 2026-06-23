@@ -64,10 +64,7 @@ public class CarteiraController {
             view.mensagemErro("carteira.msg.invalida");
             return;
         }
-        if (service.existe(nova.getId())) {
-            view.mensagemErro("carteira.msg.id.existente");
-            return;
-        }
+        // Sem checagem de ID duplicado — AUTO_INCREMENT gera o ID
         if (service.incluir(nova)) {
             view.mensagemSucesso("carteira.msg.incluida");
         } else {

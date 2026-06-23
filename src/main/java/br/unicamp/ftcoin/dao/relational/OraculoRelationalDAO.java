@@ -20,8 +20,8 @@ public class OraculoRelationalDAO implements IOraculoDAO {
 
     @Override
     public boolean inserirOuAtualizar(Oraculo oraculo) {
-        String sql = "INSERT INTO oraculo (data, cotacao) VALUES (?, ?) " +
-                "ON DUPLICATE KEY UPDATE cotacao = VALUES(cotacao)";
+        String sql = "INSERT INTO ORACULO (Data, Cotacao) VALUES (?, ?) " +
+                "ON DUPLICATE KEY UPDATE Cotacao = VALUES(Cotacao)";
         Connection conexao = null;
         try {
             conexao = DatabaseConnection.abrir();
@@ -40,7 +40,7 @@ public class OraculoRelationalDAO implements IOraculoDAO {
 
     @Override
     public Oraculo consultarPorData(LocalDate data) {
-        String sql = "SELECT data, cotacao FROM oraculo WHERE data = ?";
+        String sql = "SELECT Data, Cotacao FROM ORACULO WHERE Data = ?";
         Connection conexao = null;
         try {
             conexao = DatabaseConnection.abrir();
@@ -49,8 +49,8 @@ public class OraculoRelationalDAO implements IOraculoDAO {
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         return new Oraculo(
-                                rs.getDate("data").toLocalDate(),
-                                rs.getBigDecimal("cotacao")
+                                rs.getDate("Data").toLocalDate(),
+                                rs.getBigDecimal("Cotacao")
                         );
                     }
                     return null;
@@ -66,7 +66,7 @@ public class OraculoRelationalDAO implements IOraculoDAO {
 
     @Override
     public Oraculo consultarMaisRecente() {
-        String sql = "SELECT data, cotacao FROM oraculo ORDER BY data DESC LIMIT 1";
+        String sql = "SELECT Data, Cotacao FROM ORACULO ORDER BY Data DESC LIMIT 1";
         Connection conexao = null;
         try {
             conexao = DatabaseConnection.abrir();
@@ -74,8 +74,8 @@ public class OraculoRelationalDAO implements IOraculoDAO {
                  ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return new Oraculo(
-                            rs.getDate("data").toLocalDate(),
-                            rs.getBigDecimal("cotacao")
+                            rs.getDate("Data").toLocalDate(),
+                            rs.getBigDecimal("Cotacao")
                     );
                 }
                 return null;
@@ -90,7 +90,7 @@ public class OraculoRelationalDAO implements IOraculoDAO {
 
     @Override
     public List<Oraculo> listarTodas() {
-        String sql = "SELECT data, cotacao FROM oraculo ORDER BY data";
+        String sql = "SELECT Data, Cotacao FROM ORACULO ORDER BY Data";
         List<Oraculo> resultado = new ArrayList<>();
         Connection conexao = null;
         try {
@@ -99,8 +99,8 @@ public class OraculoRelationalDAO implements IOraculoDAO {
                  ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     resultado.add(new Oraculo(
-                            rs.getDate("data").toLocalDate(),
-                            rs.getBigDecimal("cotacao")
+                            rs.getDate("Data").toLocalDate(),
+                            rs.getBigDecimal("Cotacao")
                     ));
                 }
             }
