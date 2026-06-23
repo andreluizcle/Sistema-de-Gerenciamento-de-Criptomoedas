@@ -130,15 +130,49 @@ O sistema suporta múltiplos idiomas via arquivos `.properties`:
 
 > **Pré-requisitos:** Java 11+ e MariaDB instalados e configurados.
 
+### 1. Clone o repositório
+
 ```bash
-# Clone o repositório
 git clone https://github.com/<seu-usuario>/<seu-repositorio>.git
+cd ftcoin
+```
 
-# Compile o projeto
-javac -d bin src/java/**/*.java
+### 2. Estrutura esperada
 
-# Execute
-java -cp bin Start
+O repositório já inclui a pasta `lib/` com as dependências necessárias:
+
+```
+ftcoin/
+├── src/
+├── lib/
+│   ├── mariadb-java-client-3.4.0.jar
+│   ├── slf4j-nop-2.0.13.jar
+│   └── slf4j-api-2.0.13.jar
+└── README.md
+```
+
+### 3. Compile o projeto
+
+**Windows:**
+```cmd
+javac -cp "lib/mariadb-java-client-3.4.0.jar;lib/slf4j-nop-2.0.13.jar;lib/slf4j-api-2.0.13.jar" -d out src/java/**/*.java
+```
+
+**Linux / macOS:**
+```bash
+javac -cp "lib/mariadb-java-client-3.4.0.jar:lib/slf4j-nop-2.0.13.jar:lib/slf4j-api-2.0.13.jar" -d out src/java/**/*.java
+```
+
+### 4. Execute
+
+**Windows:**
+```cmd
+java -cp "out;lib/mariadb-java-client-3.4.0.jar;lib/slf4j-nop-2.0.13.jar;lib/slf4j-api-2.0.13.jar" Start
+```
+
+**Linux / macOS:**
+```bash
+java -cp "out:lib/mariadb-java-client-3.4.0.jar:lib/slf4j-nop-2.0.13.jar:lib/slf4j-api-2.0.13.jar" Start
 ```
 
 ---
