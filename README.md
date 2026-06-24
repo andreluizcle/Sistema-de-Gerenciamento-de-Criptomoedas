@@ -157,7 +157,8 @@ ftcoin/
 **Windows:**
 ```cmd
 mkdir out
-javac -cp "lib/mariadb-java-client-3.4.0.jar;lib/slf4j-nop-2.0.13.jar;lib/slf4j-api-2.0.13.jar" -d out src/main/java/**/*.java
+dir /s /B src\main\java\*.java > sources.txt
+javac -cp "lib/mariadb-java-client-3.4.0.jar;lib/slf4j-nop-2.0.13.jar;lib/slf4j-api-2.0.13.jar" -d out @sources.txt
 ```
 
 **Linux / macOS:**
