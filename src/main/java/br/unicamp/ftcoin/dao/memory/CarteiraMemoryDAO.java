@@ -16,12 +16,21 @@ import java.util.Map;
 public class CarteiraMemoryDAO implements ICarteiraDAO {
 
     private final Map<Integer, Carteira> banco = new HashMap<>();
+    private int sequenceId = 1;
 
     @Override
     public boolean inserir(Carteira carteira) {
-        if (carteira == null || banco.containsKey(carteira.getId())) {
+        if (carteira == null) {
             return false;
         }
+        
+        // Simula o AUTO_INCREMENT do banco de dados real
+        if (carteira.getId() <= 0) {
+            carteira.setId(sequenceId++);
+        } else if (banco.containsKey(carteira.getId())) {
+            return false;
+        }
+        
         banco.put(carteira.getId(), carteira);
         return true;
     }
