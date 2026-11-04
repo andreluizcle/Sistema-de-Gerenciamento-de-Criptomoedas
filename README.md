@@ -110,11 +110,14 @@ src/main/java/br/unicamp/ftcoin/
 ├── Start.java          Ponto de entrada: escolhe idioma e persistência e inicia o menu
 ├── dto/                Objetos de transferência (Wallet, Transaction, Quote, ...)
 ├── dao/                Contratos selados e as duas implementações, fábrica e conexão
-├── oracle/             Origem das cotações (QuoteSource, FormulaQuoteSource)
+├── oracle/             Origem das cotações (fórmula local ou API do servidor)
 ├── service/            Regras de negócio e apuração por custo médio
 ├── view/               Telas de linha de comando, com cores
 ├── controller/         Orquestração e fábrica de controladores
-└── util/               Console, .env, mensagens e impressão
+└── util/               Console, .env, mensagens, registro de execução e impressão
+
+src/main/java/
+└── network/            Classes de protocolo da API do professor — ver abaixo
 ```
 
 ```
@@ -150,6 +153,20 @@ cada data é consultada na fonte uma única vez. `QuoteSource` **não** é selad
 propósito: o conjunto de fontes de cotação é aberto, e uma implementação sobre
 API HTTP entra sem alterar mais nada.
 
+**API de cotações.** O oráculo pode vir da fórmula local ou do servidor da faculdade, escolhido
+na partida. A API **não é REST e não usa JSON nem XML**: é um servidor TCP que troca objetos Java
+serializados. O cliente envia um `NetworkRequest` com as credenciais do grupo e um intervalo de
+datas e recebe um `NetworkResponse` com a lista de cotações ou uma mensagem de erro.
+
+As três classes de protocolo ficam em `src/main/java/network/`, fora de `br.unicamp.ftcoin`, e
+isso é obrigatório: a desserialização do Java resolve a classe pelo nome completo gravado no
+fluxo, então mover de pacote ou renomear um campo quebraria a comunicação com o servidor. São as
+classes do professor, alteradas apenas na codificação do arquivo, de ISO-8859-1 para UTF-8.
+Somente `ApiQuoteSource` importa esse pacote; o resto do sistema trabalha com `Quote`.
+
+Como a consulta é por intervalo, `OracleService.warmUp` traz de uma vez todas as datas de que a
+apuração vai precisar: um relatório que faria um acesso por movimentação passa a fazer um só.
+
 **Apuração.** `AverageCostCalculator` reproduz a planilha
 `Docs/FTCoinApuracaoResultado.ods`. Cada compra recalcula o custo médio ponderado
 pelo saldo anterior; cada venda realiza a diferença entre a cotação do dia e esse
@@ -175,10 +192,14 @@ FT-Coin é cotada em reais independentemente de quem lê a tela.
 
 ## Testes
 
-52 testes cobrindo serviços, oráculo, DTOs e persistência em memória. O principal
+76 testes cobrindo serviços, oráculo, DTOs e persistência em memória. O principal
 é `AverageCostCalculatorTest.reproducesReferenceSpreadsheet`, que replica os 30
 dias da planilha de apuração e confere saldo, custo médio, total comprado, total
 vendido, resultado acumulado e as duas valorações do saldo.
+
+A integração com a API é testada contra um servidor falso levantado dentro do
+próprio processo de teste, em porta efêmera do loopback, falando o protocolo
+real. Nenhum teste acessa a rede da faculdade.
 
 Telas, controladores e DAO relacional ficam fora da medição de cobertura: os dois
 primeiros são laços sobre entrada e saída padrão, e o terceiro depende do MariaDB
