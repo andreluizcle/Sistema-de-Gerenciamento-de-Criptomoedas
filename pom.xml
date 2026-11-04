@@ -78,6 +78,25 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
+                <configuration>
+                    <!--
+                      Fora do relatorio ficam as camadas que nao tem como ser
+                      exercitadas por teste automatizado aqui: as telas e os
+                      controladores sao lacos sobre System.in/System.out, e o
+                      acesso relacional depende do MariaDB da faculdade, que so
+                      responde dentro da intranet. A cobertura medida e a da
+                      logica: servicos, oraculo, DTOs e persistencia em memoria.
+                    -->
+                    <excludes>
+                        <exclude>br/unicamp/ftcoin/view/**</exclude>
+                        <exclude>br/unicamp/ftcoin/controller/**</exclude>
+                        <exclude>br/unicamp/ftcoin/dao/Relational*</exclude>
+                        <exclude>br/unicamp/ftcoin/dao/DatabaseConnection*</exclude>
+                        <exclude>br/unicamp/ftcoin/util/Console*</exclude>
+                        <exclude>br/unicamp/ftcoin/util/ReportPrinter*</exclude>
+                        <exclude>br/unicamp/ftcoin/Start*</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
