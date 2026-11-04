@@ -1,5 +1,6 @@
 package br.unicamp.ftcoin.controller;
 
+import br.unicamp.ftcoin.util.ActivityLog;
 import br.unicamp.ftcoin.util.FtCoinException;
 import br.unicamp.ftcoin.view.MainMenuView;
 
@@ -20,6 +21,7 @@ public class MainMenuController {
             try {
                 exit = handle(view.showMenu());
             } catch (FtCoinException e) {
+                ActivityLog.getInstance().errorCaught(e);
                 view.showError(e.getMessageKey());
             }
         }

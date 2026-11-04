@@ -4,6 +4,7 @@ import br.unicamp.ftcoin.dto.Quote;
 import br.unicamp.ftcoin.dto.Transaction;
 import br.unicamp.ftcoin.dto.Wallet;
 import br.unicamp.ftcoin.dto.WalletResult;
+import br.unicamp.ftcoin.util.ActivityLog;
 import br.unicamp.ftcoin.dto.WalletSummary;
 
 import java.math.BigDecimal;
@@ -37,7 +38,11 @@ public class ReportService {
      * nao no dia da ultima operacao.</p>
      */
     public WalletResult resultOf(int walletId) {
-        return calculator.calculate(transactionService.historyOf(walletId), LocalDate.now());
+        long started = System.nanoTime();
+        WalletResult result =
+                calculator.calculate(transactionService.historyOf(walletId), LocalDate.now());
+        ActivityLog.getInstance().reportBuilt(walletId, System.nanoTime() - started);
+        return result;
     }
 
     /** Relatorio 4: movimentacoes da carteira em ordem cronologica. */

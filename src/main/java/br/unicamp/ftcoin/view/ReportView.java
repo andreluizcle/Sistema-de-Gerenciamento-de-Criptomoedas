@@ -5,6 +5,7 @@ import br.unicamp.ftcoin.dto.Transaction;
 import br.unicamp.ftcoin.dto.Wallet;
 import br.unicamp.ftcoin.dto.WalletResult;
 import br.unicamp.ftcoin.dto.WalletSummary;
+import br.unicamp.ftcoin.util.ActivityLog;
 import br.unicamp.ftcoin.util.Console;
 import br.unicamp.ftcoin.util.ReportPrinter;
 
@@ -216,9 +217,14 @@ public class ReportView extends BaseView {
         }
     }
 
+    private int countLines(String document) {
+        return document.isEmpty() ? 0 : document.split("\r?\n", -1).length;
+    }
+
     private void saveToFile(String document) {
         try {
             Path file = ReportPrinter.saveToFile("ftcoin-report.txt", document);
+            ActivityLog.getInstance().reportExported(file, countLines(document));
             Console.success(messages.format("report.print.saved", file.toString()));
         } catch (IOException e) {
             Console.error(messages.get("report.print.failed"));

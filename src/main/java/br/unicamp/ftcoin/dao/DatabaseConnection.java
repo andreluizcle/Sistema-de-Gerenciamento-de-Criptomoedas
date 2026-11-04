@@ -1,5 +1,6 @@
 package br.unicamp.ftcoin.dao;
 
+import br.unicamp.ftcoin.util.ActivityLog;
 import br.unicamp.ftcoin.util.EnvLoader;
 
 import java.sql.Connection;
@@ -43,10 +44,13 @@ public final class DatabaseConnection {
     public synchronized Connection connection() {
         try {
             if (connection == null || connection.isClosed()) {
+                boolean reopening = connection != null;
                 connection = open();
+                ActivityLog.getInstance().database(reopening ? "reopen" : "open", url(), null);
             }
             return connection;
         } catch (SQLException e) {
+            ActivityLog.getInstance().database("fail", url(), e);
             throw new PersistenceException("error.persistence.connect", e);
         }
     }
@@ -83,6 +87,7 @@ public final class DatabaseConnection {
             // A conexao ja estava invalida; nao ha nada a fazer nem a informar.
         } finally {
             connection = null;
+            ActivityLog.getInstance().database("close", url(), null);
         }
     }
 }

@@ -3,6 +3,10 @@ target/
 out/
 *.class
 
+# Artefatos gerados pela execucao
+ftcoin.log
+ftcoin-report.txt
+
 # Credenciais - nunca versionar
 .env
 

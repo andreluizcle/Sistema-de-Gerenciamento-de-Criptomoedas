@@ -3,6 +3,7 @@ package br.unicamp.ftcoin.controller;
 import br.unicamp.ftcoin.dto.TransactionReceipt;
 import br.unicamp.ftcoin.service.TransactionService;
 import br.unicamp.ftcoin.service.WalletService;
+import br.unicamp.ftcoin.util.ActivityLog;
 import br.unicamp.ftcoin.util.FtCoinException;
 import br.unicamp.ftcoin.view.TransactionView;
 
@@ -27,6 +28,7 @@ public class TransactionController {
             try {
                 back = handle(view.showMenu());
             } catch (FtCoinException e) {
+                ActivityLog.getInstance().errorCaught(e);
                 view.showError(e.getMessageKey());
             }
         }

@@ -3,6 +3,7 @@ package br.unicamp.ftcoin.service;
 import br.unicamp.ftcoin.dao.TransactionDAO;
 import br.unicamp.ftcoin.dao.WalletDAO;
 import br.unicamp.ftcoin.dto.Wallet;
+import br.unicamp.ftcoin.util.ActivityLog;
 import br.unicamp.ftcoin.util.MessageProvider;
 
 import java.text.Collator;
@@ -15,6 +16,7 @@ public class WalletService {
 
     private final WalletDAO walletDAO;
     private final TransactionDAO transactionDAO;
+    private final ActivityLog log = ActivityLog.getInstance();
 
     public WalletService(WalletDAO walletDAO, TransactionDAO transactionDAO) {
         this.walletDAO = walletDAO;
@@ -28,7 +30,9 @@ public class WalletService {
      */
     public boolean add(Wallet wallet) {
         requireFilledIn(wallet);
-        return walletDAO.insert(wallet);
+        boolean applied = walletDAO.insert(wallet);
+        log.walletChanged("create", wallet.getId(), applied);
+        return applied;
     }
 
     public Wallet findById(int id) {
@@ -49,7 +53,9 @@ public class WalletService {
         if (wallet.getId() <= 0) {
             throw new BusinessException("wallet.msg.notFound");
         }
-        return walletDAO.update(wallet);
+        boolean applied = walletDAO.update(wallet);
+        log.walletChanged("update", wallet.getId(), applied);
+        return applied;
     }
 
     /** Exclui a carteira e, antes dela, todas as suas movimentacoes. */
@@ -58,7 +64,9 @@ public class WalletService {
             return false;
         }
         transactionDAO.deleteByWallet(id);
-        return walletDAO.delete(id);
+        boolean applied = walletDAO.delete(id);
+        log.walletChanged("delete", id, applied);
+        return applied;
     }
 
     /** Relatorio 1: carteiras ordenadas por identificador. */

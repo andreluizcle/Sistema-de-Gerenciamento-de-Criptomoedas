@@ -4,6 +4,7 @@ import br.unicamp.ftcoin.dao.TransactionDAO;
 import br.unicamp.ftcoin.dto.OperationType;
 import br.unicamp.ftcoin.dto.Quote;
 import br.unicamp.ftcoin.dto.Transaction;
+import br.unicamp.ftcoin.util.ActivityLog;
 import br.unicamp.ftcoin.dto.TransactionReceipt;
 
 import java.math.BigDecimal;
@@ -57,6 +58,8 @@ public class TransactionService {
             throw new BusinessException("transaction.msg.notRegistered");
         }
         Quote quote = oracleService.quoteOn(date);
+        ActivityLog.getInstance().tradeRegistered(
+                type == OperationType.BUY ? "buy" : "sell", walletId, normalized, date);
         return new TransactionReceipt(transaction, quote, balanceOf(walletId));
     }
 

@@ -1,6 +1,7 @@
 package br.unicamp.ftcoin.service;
 
 import br.unicamp.ftcoin.dto.Quote;
+import br.unicamp.ftcoin.util.ActivityLog;
 import br.unicamp.ftcoin.oracle.QuoteSource;
 
 import java.math.BigDecimal;
@@ -26,6 +27,7 @@ public class OracleService {
 
     private final QuoteSource quoteSource;
     private final Map<LocalDate, Quote> cache = new HashMap<>();
+    private final ActivityLog log = ActivityLog.getInstance();
 
     public OracleService(QuoteSource quoteSource) {
         this.quoteSource = quoteSource;
@@ -33,7 +35,17 @@ public class OracleService {
 
     /** Cotacao da data, buscando na fonte apenas na primeira vez. */
     public Quote quoteOn(LocalDate date) {
-        return cache.computeIfAbsent(date, quoteSource::fetch);
+        Quote cached = cache.get(date);
+        if (cached != null) {
+            log.oracleCacheHit(date);
+            return cached;
+        }
+        // Nada e gravado no cache se a busca falhar, como acontecia com computeIfAbsent.
+        long started = System.nanoTime();
+        Quote fetched = quoteSource.fetch(date);
+        log.oracleFetched(date, fetched.price(), System.nanoTime() - started);
+        cache.put(date, fetched);
+        return fetched;
     }
 
     public Quote todayQuote() {

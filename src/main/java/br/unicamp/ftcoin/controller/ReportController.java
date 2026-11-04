@@ -4,6 +4,7 @@ import br.unicamp.ftcoin.dto.Wallet;
 import br.unicamp.ftcoin.dto.WalletResult;
 import br.unicamp.ftcoin.service.ReportService;
 import br.unicamp.ftcoin.service.WalletService;
+import br.unicamp.ftcoin.util.ActivityLog;
 import br.unicamp.ftcoin.util.FtCoinException;
 import br.unicamp.ftcoin.view.ReportView;
 
@@ -29,6 +30,7 @@ public class ReportController {
             try {
                 back = handle(view.showMenu());
             } catch (FtCoinException e) {
+                ActivityLog.getInstance().errorCaught(e);
                 view.showError(e.getMessageKey());
             }
         }

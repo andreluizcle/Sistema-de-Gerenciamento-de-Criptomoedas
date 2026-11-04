@@ -19,6 +19,7 @@ public class HelpController {
             switch (view.showMenu()) {
                 case 1 -> view.showHelpText();
                 case 2 -> view.showCredits();
+                case 3 -> view.showSessionState();
                 case 0 -> back = true;
                 default -> view.showInvalidOption();
             }

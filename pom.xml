@@ -26,7 +26,13 @@
             <artifactId>mariadb-java-client</artifactId>
             <version>3.4.0</version>
         </dependency>
-        <!-- Descarta o log do driver JDBC para nao poluir a saida da CLI. -->
+        <!--
+          Encaminha o log do driver JDBC para uma implementacao que o descarta.
+          Sem estes dois jars o driver usa o proprio mecanismo e escreve direto
+          no console (ex.: "[ WARN] (main) Error: 1698-28000: Access denied"),
+          no meio da interface; so com o slf4j-api, aparecem tres linhas de
+          aviso na partida. Com o nop, a saida fica limpa.
+        -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-nop</artifactId>
