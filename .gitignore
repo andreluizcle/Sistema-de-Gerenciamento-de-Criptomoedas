@@ -1,0 +1,18 @@
+# Build
+target/
+out/
+*.class
+
+# Credenciais - nunca versionar
+.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Sistema
+.DS_Store
