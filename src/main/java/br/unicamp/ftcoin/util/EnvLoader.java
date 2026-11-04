@@ -10,113 +10,107 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Carregador simples de arquivos .env (sem dependencias externas).
+ * Leitor simples de arquivos {@code .env}, sem dependencias externas.
  *
- * Regras de leitura:
- *   - Linhas em branco e linhas iniciadas por '#' sao ignoradas;
- *   - Formato esperado: CHAVE=valor;
- *   - Espacos antes/depois da chave e do valor sao descartados;
- *   - Aspas duplas ou simples envolvendo o valor sao removidas.
+ * <p>Formato aceito: {@code KEY=value}, uma entrada por linha. Linhas em branco
+ * e linhas iniciadas por {@code #} sao ignoradas; espacos ao redor da chave e do
+ * valor sao descartados e aspas envolvendo o valor sao removidas.</p>
  *
- * Ordem de resolucao quando se chama get(chave):
- *   1) variavel de ambiente do sistema (System.getenv);
- *   2) entradas carregadas do arquivo .env;
- *   3) retorna null se nao encontrar.
- *
- * Procura o arquivo .env em (em ordem):
- *   - caminho informado em ENV_FILE (var. de ambiente);
- *   - ./.env (diretorio corrente);
- *   - ../.env (um nivel acima, util quando se executa de out/).
+ * <p>Ao resolver uma chave, a variavel de ambiente do sistema tem prioridade
+ * sobre o arquivo. O arquivo e procurado em {@code ENV_FILE}, depois
+ * {@code ./.env} e por fim {@code ../.env} (util ao executar a partir de
+ * {@code out/} ou {@code target/}).</p>
  */
 public final class EnvLoader {
 
-    private static final Map<String, String> entradas = new HashMap<>();
-    private static boolean carregado = false;
+    private static final Map<String, String> entries = new HashMap<>();
+    private static boolean loaded = false;
 
     private EnvLoader() {
     }
 
-    /** Carrega o .env uma unica vez. Pode ser chamado varias vezes com seguranca. */
-    public static synchronized void carregar() {
-        if (carregado) {
+    /** Carrega o arquivo uma unica vez; chamadas seguintes nao fazem nada. */
+    public static synchronized void load() {
+        if (loaded) {
             return;
         }
-        Path arquivo = localizarArquivo();
-        if (arquivo != null) {
-            lerArquivo(arquivo);
+        Path file = locateFile();
+        if (file != null) {
+            readFile(file);
         }
-        carregado = true;
+        loaded = true;
     }
 
-    private static Path localizarArquivo() {
-        String custom = System.getenv("ENV_FILE");
-        if (custom != null && !custom.isEmpty()) {
-            Path p = Paths.get(custom);
-            if (Files.exists(p)) {
-                return p;
+    private static Path locateFile() {
+        String configuredPath = System.getenv("ENV_FILE");
+        if (configuredPath != null && !configuredPath.isEmpty()) {
+            Path customFile = Paths.get(configuredPath);
+            if (Files.exists(customFile)) {
+                return customFile;
             }
         }
-        Path p1 = Paths.get(".env");
-        if (Files.exists(p1)) {
-            return p1;
+        Path currentDirFile = Paths.get(".env");
+        if (Files.exists(currentDirFile)) {
+            return currentDirFile;
         }
-        Path p2 = Paths.get("..", ".env");
-        if (Files.exists(p2)) {
-            return p2;
+        Path parentDirFile = Paths.get("..", ".env");
+        if (Files.exists(parentDirFile)) {
+            return parentDirFile;
         }
         return null;
     }
 
-    private static void lerArquivo(Path arquivo) {
-        try (BufferedReader br = Files.newBufferedReader(arquivo, StandardCharsets.UTF_8)) {
-            String linha;
-            while ((linha = br.readLine()) != null) {
-                processarLinha(linha);
+    private static void readFile(Path file) {
+        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                parseLine(line);
             }
         } catch (IOException e) {
-            System.err.println("Aviso: nao foi possivel ler " + arquivo + ": " + e.getMessage());
+            // Sem .env legivel a aplicacao ainda roda em memoria; o modo relacional
+            // falha depois, com mensagem propria, ao faltar DB_USER/DB_PASSWORD.
+            System.err.println("Warning: could not read " + file + ": " + e.getMessage());
         }
     }
 
-    private static void processarLinha(String linhaOriginal) {
-        String linha = linhaOriginal.trim();
-        if (linha.isEmpty() || linha.startsWith("#")) {
+    private static void parseLine(String rawLine) {
+        String line = rawLine.trim();
+        if (line.isEmpty() || line.startsWith("#")) {
             return;
         }
-        int igual = linha.indexOf('=');
-        if (igual <= 0) {
+        int separator = line.indexOf('=');
+        if (separator <= 0) {
             return;
         }
-        String chave = linha.substring(0, igual).trim();
-        String valor = linha.substring(igual + 1).trim();
-        valor = removerAspas(valor);
-        entradas.put(chave, valor);
+        String key = line.substring(0, separator).trim();
+        String value = stripQuotes(line.substring(separator + 1).trim());
+        entries.put(key, value);
     }
 
-    private static String removerAspas(String valor) {
-        if (valor.length() >= 2) {
-            char inicio = valor.charAt(0);
-            char fim = valor.charAt(valor.length() - 1);
-            if ((inicio == '"' && fim == '"') || (inicio == '\'' && fim == '\'')) {
-                return valor.substring(1, valor.length() - 1);
+    private static String stripQuotes(String value) {
+        if (value.length() >= 2) {
+            char first = value.charAt(0);
+            char last = value.charAt(value.length() - 1);
+            if ((first == '"' && last == '"') || (first == '\'' && last == '\'')) {
+                return value.substring(1, value.length() - 1);
             }
         }
-        return valor;
+        return value;
     }
 
-    /** Retorna o valor da chave (env do sistema tem prioridade). */
-    public static String get(String chave) {
-        carregar();
-        String doSistema = System.getenv(chave);
-        if (doSistema != null && !doSistema.isEmpty()) {
-            return doSistema;
+    /** Valor da chave, ou {@code null}. Variavel de ambiente tem prioridade. */
+    public static String get(String key) {
+        load();
+        String fromSystem = System.getenv(key);
+        if (fromSystem != null && !fromSystem.isEmpty()) {
+            return fromSystem;
         }
-        return entradas.get(chave);
+        return entries.get(key);
     }
 
-    /** Retorna o valor da chave ou o default informado. */
-    public static String get(String chave, String valorPadrao) {
-        String v = get(chave);
-        return (v == null || v.isEmpty()) ? valorPadrao : v;
+    /** Valor da chave, ou {@code defaultValue} quando ausente ou vazio. */
+    public static String get(String key, String defaultValue) {
+        String value = get(key);
+        return (value == null || value.isEmpty()) ? defaultValue : value;
     }
 }
