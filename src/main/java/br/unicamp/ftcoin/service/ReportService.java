@@ -39,10 +39,27 @@ public class ReportService {
      */
     public WalletResult resultOf(int walletId) {
         long started = System.nanoTime();
-        WalletResult result =
-                calculator.calculate(transactionService.historyOf(walletId), LocalDate.now());
+        LocalDate valuationDate = LocalDate.now();
+        List<Transaction> history = transactionService.historyOf(walletId);
+        warmUpFor(history, valuationDate);
+        WalletResult result = calculator.calculate(history, valuationDate);
         ActivityLog.getInstance().reportBuilt(walletId, System.nanoTime() - started);
         return result;
+    }
+
+    /**
+     * Traz de uma vez as cotacoes que a apuracao vai pedir.
+     *
+     * <p>Sem isto, com o oraculo em rede, a apuracao faria um acesso por data do
+     * historico. O intervalo cobre da primeira a ultima movimentacao; a data de
+     * valoracao e buscada a parte, para nao pedir ao servidor os dias ociosos
+     * entre a ultima operacao e hoje.</p>
+     */
+    private void warmUpFor(List<Transaction> history, LocalDate valuationDate) {
+        if (history.isEmpty()) {
+            return;
+        }
+        oracleService.warmUp(history.get(0).getDate(), history.get(history.size() - 1).getDate());
     }
 
     /** Relatorio 4: movimentacoes da carteira em ordem cronologica. */

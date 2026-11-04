@@ -5,6 +5,8 @@ import br.unicamp.ftcoin.controller.MainMenuController;
 import br.unicamp.ftcoin.dao.DAOFactory;
 import br.unicamp.ftcoin.dao.PersistenceType;
 import br.unicamp.ftcoin.dao.RelationalDAOFactory;
+import br.unicamp.ftcoin.oracle.ApiQuoteSource;
+import br.unicamp.ftcoin.oracle.QuoteSource;
 import br.unicamp.ftcoin.util.ActivityLog;
 import br.unicamp.ftcoin.util.FtCoinException;
 import br.unicamp.ftcoin.util.MessageProvider;
@@ -28,6 +30,7 @@ public final class Start {
         StartupView startup = new StartupView();
         MessageProvider.getInstance().setLocale(startup.askLanguage());
         PersistenceType persistence = startup.askPersistence();
+        QuoteSource quoteSource = startup.askQuoteSource().create();
 
         ActivityLog log = ActivityLog.getInstance();
         log.startSession(persistence.name());
@@ -35,7 +38,10 @@ public final class Start {
             if (daoFactory instanceof RelationalDAOFactory relational) {
                 startup.showDatabaseInUse(relational.databaseUrl());
             }
-            new MainMenuController(new ControllerFactory(daoFactory)).run();
+            if (quoteSource instanceof ApiQuoteSource api) {
+                startup.showQuoteServerInUse(api.address());
+            }
+            new MainMenuController(new ControllerFactory(daoFactory, quoteSource)).run();
         } catch (FtCoinException e) {
             log.errorCaught(e);
             startup.showFatalError(e.getMessageKey());

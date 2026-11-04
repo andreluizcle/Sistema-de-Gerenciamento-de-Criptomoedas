@@ -60,6 +60,7 @@ public final class ActivityLog {
     private boolean writeFailed;
     private long oracleMicros;
     private long oracleMaxMicros;
+    private long rangeMicros;
     private long reportMicros;
 
     private ActivityLog() {
@@ -129,6 +130,7 @@ public final class ActivityLog {
         counters.clear();
         oracleMicros = 0;
         oracleMaxMicros = 0;
+        rangeMicros = 0;
         reportMicros = 0;
     }
 
@@ -191,6 +193,20 @@ public final class ActivityLog {
                 "date=" + date + " price=" + price.toPlainString() + " us=" + micros);
     }
 
+    /**
+     * Intervalo de cotacoes trazido em uma unica consulta.
+     *
+     * <p>E a linha que mostra o ganho do pedido por faixa: uma apuracao que
+     * pediria dezenas de datas aparece aqui como um unico acesso.</p>
+     */
+    public synchronized void oracleRangeFetched(LocalDate first, LocalDate last,
+                                                int quotes, long elapsedNanos) {
+        long micros = elapsedNanos / 1_000;
+        rangeMicros += micros;
+        log(Level.INFO, "oracle.range",
+                "first=" + first + " last=" + last + " quotes=" + quotes + " us=" + micros);
+    }
+
     /** Apuracao de uma carteira, com o tempo gasto em microssegundos. */
     public synchronized void reportBuilt(int walletId, long elapsedNanos) {
         long micros = elapsedNanos / 1_000;
@@ -246,12 +262,14 @@ public final class ActivityLog {
         return String.format(Locale.ROOT,
                 "uptimeMs=%d walletCreate=%d walletUpdate=%d walletDelete=%d buy=%d sell=%d"
                         + " oracleHit=%d oracleFetch=%d hitRate=%s oracleAvgUs=%d oracleMaxUs=%d"
+                        + " oracleRange=%d oracleRangeAvgUs=%d"
                         + " reportAvgUs=%d dbOpen=%d dbReopen=%d dbFail=%d errors=%d",
                 uptime,
                 count("wallet.create"), count("wallet.update"), count("wallet.delete"),
                 count("trade.buy"), count("trade.sell"),
                 hits, fetches, percentage(hits, hits + fetches),
                 average(oracleMicros, fetches), oracleMaxMicros,
+                count("oracle.range"), average(rangeMicros, count("oracle.range")),
                 average(reportMicros, reports),
                 count("db.open"), count("db.reopen"), count("db.fail"), count("error.caught"));
     }

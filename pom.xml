@@ -94,6 +94,8 @@
                       logica: servicos, oraculo, DTOs e persistencia em memoria.
                     -->
                     <excludes>
+                        <!-- Classes de protocolo do professor: DTOs alheios, so getters. -->
+                        <exclude>network/**</exclude>
                         <exclude>br/unicamp/ftcoin/view/**</exclude>
                         <exclude>br/unicamp/ftcoin/controller/**</exclude>
                         <exclude>br/unicamp/ftcoin/dao/Relational*</exclude>

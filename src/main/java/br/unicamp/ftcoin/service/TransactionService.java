@@ -53,11 +53,14 @@ public class TransactionService {
     private TransactionReceipt register(int walletId, BigDecimal quantity,
                                         LocalDate date, OperationType type) {
         BigDecimal normalized = normalize(quantity);
+        // A cotacao vem antes de gravar. Com o oraculo em rede ela pode falhar, e
+        // gravar primeiro deixaria a carteira com uma operacao que o usuario viu
+        // ser recusada. Sem preco nao ha operacao.
+        Quote quote = oracleService.quoteOn(date);
         Transaction transaction = new Transaction(0, walletId, date, type, normalized);
         if (!transactionDAO.insert(transaction)) {
             throw new BusinessException("transaction.msg.notRegistered");
         }
-        Quote quote = oracleService.quoteOn(date);
         ActivityLog.getInstance().tradeRegistered(
                 type == OperationType.BUY ? "buy" : "sell", walletId, normalized, date);
         return new TransactionReceipt(transaction, quote, balanceOf(walletId));

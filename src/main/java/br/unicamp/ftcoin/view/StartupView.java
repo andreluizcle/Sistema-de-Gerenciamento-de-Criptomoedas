@@ -1,6 +1,7 @@
 package br.unicamp.ftcoin.view;
 
 import br.unicamp.ftcoin.dao.PersistenceType;
+import br.unicamp.ftcoin.oracle.QuoteSourceType;
 import br.unicamp.ftcoin.util.Console;
 import br.unicamp.ftcoin.util.MessageProvider;
 
@@ -43,6 +44,20 @@ public class StartupView extends BaseView {
         System.out.println(messages.get("startup.persistence.memory"));
         System.out.println(messages.get("startup.persistence.relational"));
         return "2".equals(readChoice()) ? PersistenceType.RELATIONAL : PersistenceType.MEMORY;
+    }
+
+    /** Terceira pergunta da partida: de onde vem a cotacao. */
+    public QuoteSourceType askQuoteSource() {
+        System.out.println();
+        System.out.println(messages.get("startup.selectQuoteSource"));
+        System.out.println(messages.get("startup.quoteSource.formula"));
+        System.out.println(messages.get("startup.quoteSource.api"));
+        return "2".equals(readChoice()) ? QuoteSourceType.API : QuoteSourceType.FORMULA;
+    }
+
+    /** Informa qual servidor de cotacoes sera usado. Nunca mostra a senha. */
+    public void showQuoteServerInUse(String address) {
+        Console.warn(messages.format("startup.quoteSource.usingApi", address));
     }
 
     /** Informa qual banco sera usado, no idioma escolhido. */
