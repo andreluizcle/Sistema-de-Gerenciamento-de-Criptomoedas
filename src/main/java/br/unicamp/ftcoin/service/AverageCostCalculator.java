@@ -112,7 +112,7 @@ public final class AverageCostCalculator {
             totalSales = totalSales.add(saleValue);
 
             days.add(new DailyPosition(
-                    FormulaQuoteSource.dayIndexOf(date), date,
+                    FormulaQuoteSource.dayIndexOrZero(date), date,
                     totals.bought, totals.sold, balance,
                     price, averageCost,
                     purchaseValue, saleValue,

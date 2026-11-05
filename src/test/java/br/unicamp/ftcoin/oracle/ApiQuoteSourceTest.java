@@ -73,7 +73,9 @@ class ApiQuoteSourceTest {
     @Test
     @DisplayName("Erro devolvido pelo servidor vira mensagem traduzida, com o texto original na causa")
     void reportsServerSideError() throws IOException {
-        NetworkResponse refusal = new NetworkResponse(List.of(), "grupo nao autorizado");
+        // O servidor real devolve a mensagem de erro E a lista nula quando
+        // recusa as credenciais; o falso precisa imitar isso.
+        NetworkResponse refusal = new NetworkResponse(null, "User authentication failure");
         try (FakeQuoteServer server = FakeQuoteServer.replying(refusal)) {
             ApiQuoteSource source = sourceFor(server.port());
 
@@ -82,7 +84,7 @@ class ApiQuoteSourceTest {
 
             assertEquals("error.oracle.server", failure.getMessageKey());
             assertNotNull(failure.getCause(), "a causa deveria trazer o texto do servidor");
-            assertTrue(failure.getCause().getMessage().contains("grupo nao autorizado"),
+            assertTrue(failure.getCause().getMessage().contains("authentication failure"),
                     "texto do servidor: " + failure.getCause().getMessage());
         }
     }

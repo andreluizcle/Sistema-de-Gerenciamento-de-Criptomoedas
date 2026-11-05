@@ -73,6 +73,18 @@ public final class FormulaQuoteSource implements QuoteSource {
         return (int) index;
     }
 
+    /**
+     * Numero do dia na serie, ou zero se a data for anterior ao inicio.
+     *
+     * <p>Serve a quem exibe o indice como informacao e nao pode falhar por
+     * isso. O servidor de cotacoes cobre datas fora da serie da formula, e uma
+     * movimentacao nessas datas deve aparecer no relatorio mesmo assim.</p>
+     */
+    public static int dayIndexOrZero(LocalDate date) {
+        long index = ChronoUnit.DAYS.between(EPOCH, date) + 1;
+        return index < 1 ? 0 : (int) index;
+    }
+
     /** Termo log10(25 * n) da planilha. */
     private BigDecimal appreciationOn(int dayIndex) {
         double appreciation = Math.log10((double) LOG_FACTOR * dayIndex);

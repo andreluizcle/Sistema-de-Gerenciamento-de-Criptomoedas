@@ -130,15 +130,22 @@ public final class ApiQuoteSource implements QuoteSource {
     private NetworkResponse send(NetworkRequest request) {
         try {
             NetworkResponse response = exchange(request);
-            if (response == null || response.getExchangeRates() == null) {
+            if (response == null) {
                 throw new QuoteUnavailableException("error.oracle.protocol");
             }
+            // A mensagem de erro e verificada antes da lista. Ao recusar as
+            // credenciais o servidor devolve a mensagem E a lista nula, e
+            // inverter a ordem faria uma senha errada ser relatada como
+            // resposta fora do protocolo.
             String error = response.getErrorMessage();
             if (error != null && !error.isBlank()) {
                 // O texto vem do servidor e nao e traduzivel, entao viaja na
                 // causa: o usuario ve a mensagem no seu idioma e o texto
                 // original fica no registro de execucao.
                 throw new QuoteUnavailableException("error.oracle.server", new IOException(error));
+            }
+            if (response.getExchangeRates() == null) {
+                throw new QuoteUnavailableException("error.oracle.protocol");
             }
             return response;
         } catch (ClassNotFoundException | ClassCastException e) {
