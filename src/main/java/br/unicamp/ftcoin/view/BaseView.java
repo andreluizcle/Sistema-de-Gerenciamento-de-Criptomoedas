@@ -1,6 +1,7 @@
 package br.unicamp.ftcoin.view;
 
 import br.unicamp.ftcoin.util.Console;
+import br.unicamp.ftcoin.util.EndOfInputException;
 import br.unicamp.ftcoin.util.MessageProvider;
 
 import java.math.BigDecimal;
@@ -22,13 +23,31 @@ public abstract class BaseView {
     /** Textos e formatacao no idioma corrente. */
     protected final MessageProvider messages = MessageProvider.getInstance();
 
+    /**
+     * Proxima linha da entrada padrao.
+     *
+     * <p>Unico ponto do programa que chama {@code Scanner.nextLine()}. O
+     * {@link Scanner} lanca {@code NoSuchElementException} quando a entrada
+     * termina — {@code Ctrl-D}, ou um roteiro canalizado que acabou — e essa
+     * falha, por nao ser traduzivel, atravessaria os lacos dos controladores e
+     * sairia como rastro de pilha. Aqui ela vira
+     * {@link EndOfInputException}, que {@code Start.main} trata como pedido de
+     * saida.</p>
+     */
+    private String nextLine() {
+        if (!SCANNER.hasNextLine()) {
+            throw new EndOfInputException();
+        }
+        return SCANNER.nextLine();
+    }
+
     protected void header(String titleKey) {
         Console.title(messages.get(titleKey));
     }
 
     protected void pause() {
         System.out.print(messages.get("general.pressEnter"));
-        SCANNER.nextLine();
+        nextLine();
     }
 
     public void showInvalidOption() {
@@ -52,12 +71,12 @@ public abstract class BaseView {
      */
     protected String readChoice() {
         System.out.print("> ");
-        return SCANNER.nextLine().trim();
+        return nextLine().trim();
     }
 
     protected String readLine(String promptKey) {
         System.out.print(messages.get(promptKey) + " ");
-        return SCANNER.nextLine().trim();
+        return nextLine().trim();
     }
 
     /** Le um inteiro; devolve {@link Integer#MIN_VALUE} se o formato for invalido. */
@@ -113,7 +132,7 @@ public abstract class BaseView {
     /** {@code true} se o usuario confirmar com a letra do idioma corrente. */
     protected boolean confirm(String message) {
         System.out.print(message + " " + messages.get("general.confirm") + " ");
-        String answer = SCANNER.nextLine().trim().toUpperCase();
+        String answer = nextLine().trim().toUpperCase();
         return answer.equals(messages.get("general.yes").toUpperCase());
     }
 }

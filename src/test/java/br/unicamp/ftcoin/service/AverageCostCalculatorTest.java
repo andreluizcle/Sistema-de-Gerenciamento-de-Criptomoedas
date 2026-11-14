@@ -204,8 +204,12 @@ class AverageCostCalculatorTest {
                 new Transaction(1, 1, date, OperationType.SELL, new BigDecimal("100")));
 
         AverageCostCalculator calculator = calculatorFor(source);
-        assertThrows(IllegalStateException.class,
+        // Traduzivel, e nao IllegalStateException: a apuracao pode encontrar esta
+        // situacao em dado vindo de fora da aplicacao, e nesse caso precisa
+        // recusar com mensagem em vez de derrubar o programa.
+        BusinessException failure = assertThrows(BusinessException.class,
                 () -> calculator.calculate(transactions, date));
+        assertEquals("error.calculation.negativeBalance", failure.getMessageKey());
     }
 
     @Test

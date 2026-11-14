@@ -8,6 +8,7 @@ import br.unicamp.ftcoin.dao.RelationalDAOFactory;
 import br.unicamp.ftcoin.oracle.ApiQuoteSource;
 import br.unicamp.ftcoin.oracle.QuoteSource;
 import br.unicamp.ftcoin.util.ActivityLog;
+import br.unicamp.ftcoin.util.EndOfInputException;
 import br.unicamp.ftcoin.util.FtCoinException;
 import br.unicamp.ftcoin.util.MessageProvider;
 import br.unicamp.ftcoin.view.StartupView;
@@ -27,6 +28,18 @@ public final class Start {
     }
 
     public static void main(String[] args) {
+        try {
+            run();
+        } catch (EndOfInputException e) {
+            // A entrada padrao terminou: Ctrl-D, ou um roteiro canalizado que
+            // acabou antes da opcao de sair. Encerra como uma saida normal, sem
+            // rastro de pilha. A quebra de linha evita que o prompt do shell
+            // volte colado no ultimo texto escrito pela tela.
+            System.out.println();
+        }
+    }
+
+    private static void run() {
         StartupView startup = new StartupView();
         MessageProvider.getInstance().setLocale(startup.askLanguage());
         PersistenceType persistence = startup.askPersistence();

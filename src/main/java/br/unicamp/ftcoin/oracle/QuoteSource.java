@@ -40,7 +40,16 @@ public interface QuoteSource {
     default List<Quote> fetchBetween(LocalDate from, LocalDate to) {
         List<Quote> quotes = new ArrayList<>();
         for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
-            quotes.add(fetch(date));
+            // Uma data sem cotacao e omitida, nao propagada: e o que o contrato
+            // acima promete. Propagar faria uma carteira com movimentacao fora
+            // da serie perder o relatorio inteiro no aquecimento, antes de o
+            // calculo comecar. Quem precisa de uma data especifica chama
+            // fetch(LocalDate), que falha.
+            try {
+                quotes.add(fetch(date));
+            } catch (QuoteUnavailableException e) {
+                continue;
+            }
         }
         return quotes;
     }

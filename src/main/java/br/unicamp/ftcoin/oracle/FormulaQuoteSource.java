@@ -64,11 +64,24 @@ public final class FormulaQuoteSource implements QuoteSource {
         return new Quote(date, price);
     }
 
-    /** Numero do dia na serie, comecando em 1 na data de {@link #EPOCH}. */
+    /**
+     * Numero do dia na serie, comecando em 1 na data de {@link #EPOCH}.
+     *
+     * <p>As duas pontas sao conferidas no {@code long}, antes da conversao. Sem
+     * o teto, uma data em ano muito distante teria o indice truncado nos 32 bits
+     * baixos e devolveria um numero <i>valido na aparencia e errado</i> — uma
+     * cotacao confiantemente falsa — ou um indice negativo, que faria o
+     * {@code log10} da valorizacao devolver {@code NaN}.</p>
+     *
+     * @throws QuoteUnavailableException se a data estiver fora da serie
+     */
     public static int dayIndexOf(LocalDate date) {
         long index = ChronoUnit.DAYS.between(EPOCH, date) + 1;
         if (index < 1) {
             throw new QuoteUnavailableException("error.oracle.dateBeforeEpoch");
+        }
+        if (index > Integer.MAX_VALUE) {
+            throw new QuoteUnavailableException("error.oracle.noQuote");
         }
         return (int) index;
     }
@@ -82,7 +95,7 @@ public final class FormulaQuoteSource implements QuoteSource {
      */
     public static int dayIndexOrZero(LocalDate date) {
         long index = ChronoUnit.DAYS.between(EPOCH, date) + 1;
-        return index < 1 ? 0 : (int) index;
+        return index < 1 || index > Integer.MAX_VALUE ? 0 : (int) index;
     }
 
     /** Termo log10(25 * n) da planilha. */

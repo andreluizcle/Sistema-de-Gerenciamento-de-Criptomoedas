@@ -65,7 +65,7 @@ public final class AverageCostCalculator {
      * @param transactions  movimentacoes da carteira, em qualquer ordem
      * @param valuationDate data usada para valorar o saldo final a mercado
      * @return a serie diaria e os totais; zerado quando nao ha movimentacao
-     * @throws IllegalStateException se uma venda deixaria o saldo negativo
+     * @throws BusinessException se uma venda deixaria o saldo negativo em algum dia
      */
     public WalletResult calculate(List<Transaction> transactions, LocalDate valuationDate) {
         Quote valuationQuote = oracleService.quoteOn(valuationDate);
@@ -100,8 +100,14 @@ public final class AverageCostCalculator {
             BigDecimal operationResult = BigDecimal.ZERO;
             if (totals.sold.signum() > 0) {
                 if (totals.sold.compareTo(balance) > 0) {
-                    throw new IllegalStateException(
-                            "Sale of " + totals.sold + " on " + date + " exceeds the balance of " + balance);
+                    // Traduzivel de proposito. O registro de venda ja impede a
+                    // aplicacao de criar esta situacao, conferindo a serie
+                    // inteira antes de gravar; esta guarda cobre dado que chegou
+                    // de fora — versao anterior do programa, insercao direta no
+                    // banco, outra ferramenta — e o que importa nesse caso e a
+                    // apuracao recusar com mensagem em vez de derrubar o
+                    // programa com rastro de pilha.
+                    throw new BusinessException("error.calculation.negativeBalance");
                 }
                 operationResult = totals.sold.multiply(price.subtract(averageCost));
                 balance = balance.subtract(totals.sold);

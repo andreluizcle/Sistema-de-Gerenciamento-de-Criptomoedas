@@ -27,6 +27,17 @@ import java.util.Set;
  */
 public class OracleService {
 
+    /**
+     * Teto do intervalo buscado de uma vez: dez anos.
+     *
+     * <p>A implementacao padrao de {@code fetchBetween} materializa uma cotacao
+     * por dia. Uma base que contenha uma data em ano distante pediria milhoes de
+     * objetos e derrubaria o relatorio por falta de memoria. Acima do teto a
+     * busca em bloco e dispensada e cada data e buscada quando pedida: lento e
+     * correto, em vez de rapido e fatal.</p>
+     */
+    private static final long MAX_WARM_UP_DAYS = 3660;
+
     private final QuoteSource quoteSource;
     private final Map<LocalDate, Quote> cache = new HashMap<>();
 
@@ -80,11 +91,24 @@ public class OracleService {
         if (from == null || to == null || from.isAfter(to) || isAlreadyWarmed(from, to)) {
             return;
         }
+        if (ChronoUnit.DAYS.between(from, to) > MAX_WARM_UP_DAYS) {
+            return;
+        }
         long started = System.nanoTime();
         List<Quote> quotes = quoteSource.fetchBetween(from, to);
         log.oracleRangeFetched(from, to, quotes.size(), System.nanoTime() - started);
         for (Quote quote : quotes) {
-            cache.put(quote.date(), quote);
+            // Entra no cache so o que foi pedido, e a primeira resposta vence.
+            // Uma cotacao com data fora do intervalo — erro de fuso ou de faixa
+            // no servidor — passaria a valer como a cotacao daquele dia pelo
+            // resto da sessao, e uma operacao seria registrada a um preco que o
+            // servidor nunca publicou para ela. Sobrescrever entrada existente
+            // faria dois relatorios da mesma sessao discordarem, porque
+            // ApiQuoteSource.fetch mantem a primeira ocorrencia e este laco
+            // manteria a ultima.
+            if (!quote.date().isBefore(from) && !quote.date().isAfter(to)) {
+                cache.putIfAbsent(quote.date(), quote);
+            }
         }
         for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
             warmedDates.add(date);

@@ -145,4 +145,35 @@ class FormulaQuoteSourceTest {
         assertEquals(1, FormulaQuoteSource.dayIndexOf(FormulaQuoteSource.EPOCH));
         assertEquals(30, FormulaQuoteSource.dayIndexOf(FormulaQuoteSource.EPOCH.plusDays(29)));
     }
+
+    @Test
+    @DisplayName("Data cujo indice nao cabe em int nao tem cotacao")
+    void rejectsDateBeyondTheIndexRange() {
+        // A guarda compara no long, antes da conversao. Sem o teto, o indice era
+        // truncado nos 32 bits baixos: para algumas datas isso devolvia um
+        // numero valido na aparencia, e portanto uma cotacao confiantemente
+        // errada, e para outras um indice negativo, que fazia o log10 da
+        // valorizacao devolver NaN e o BigDecimal recusar o valor.
+        assertThrows(QuoteUnavailableException.class, () -> source.fetch(LocalDate.MAX));
+        assertThrows(QuoteUnavailableException.class,
+                () -> FormulaQuoteSource.dayIndexOf(LocalDate.MAX));
+        assertEquals(0, FormulaQuoteSource.dayIndexOrZero(LocalDate.MAX));
+    }
+
+    @Test
+    @DisplayName("A busca por intervalo omite as datas sem cotacao, sem falhar")
+    void fetchBetweenSkipsDatesWithoutQuote() {
+        // Exercita a implementacao padrao de QuoteSource.fetchBetween, que a
+        // formula nao sobrescreve. O contrato e de melhor esforco: propagar a
+        // falha fazia uma carteira com movimentacao anterior a 2026 perder o
+        // relatorio inteiro no aquecimento do cache, antes de o calculo comecar.
+        LocalDate from = FormulaQuoteSource.EPOCH.minusDays(2);
+        LocalDate to = FormulaQuoteSource.EPOCH.plusDays(1);
+
+        var quotes = source.fetchBetween(from, to);
+
+        assertEquals(2, quotes.size(), "so os dois dias dentro da serie");
+        assertEquals(FormulaQuoteSource.EPOCH, quotes.get(0).date());
+        assertEquals(FormulaQuoteSource.EPOCH.plusDays(1), quotes.get(1).date());
+    }
 }
