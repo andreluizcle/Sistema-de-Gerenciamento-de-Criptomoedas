@@ -79,6 +79,28 @@
                 </configuration>
             </plugin>
 
+            <!--
+              Documentacao em target/site/apidocs (RNF04), gerada com
+              "mvn javadoc:javadoc". O doclint verifica a sintaxe e as
+              referencias, mas nao exige @param em todo parametro: o projeto
+              documenta classes e metodos nao obvios, e uma etiqueta por
+              parametro repetiria o nome sem acrescentar informacao.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <doclint>all,-missing</doclint>
+                    <encoding>UTF-8</encoding>
+                    <docencoding>UTF-8</docencoding>
+                    <charset>UTF-8</charset>
+                    <notimestamp>true</notimestamp>
+                    <windowtitle>FT-Coin</windowtitle>
+                    <doctitle>FT-Coin — Grupo B3</doctitle>
+                </configuration>
+            </plugin>
+
             <!-- Relatorio de cobertura em target/site/jacoco/index.html (RNF03). -->
             <plugin>
                 <groupId>org.jacoco</groupId>
