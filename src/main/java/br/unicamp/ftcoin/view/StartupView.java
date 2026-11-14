@@ -8,7 +8,8 @@ import br.unicamp.ftcoin.util.MessageProvider;
 import java.util.Locale;
 
 /**
- * Perguntas feitas antes do menu principal: idioma e modo de persistencia.
+ * Perguntas feitas antes do menu principal: idioma, modo de persistencia e
+ * origem das cotacoes.
  *
  * <p>Fica na camada de apresentacao, e nao na classe de partida, para que
  * {@code Start} apenas monte a aplicacao e nao converse com o usuario.</p>

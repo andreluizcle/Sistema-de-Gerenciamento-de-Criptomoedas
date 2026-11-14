@@ -58,8 +58,7 @@ class FormulaQuoteSourceTest {
     @Test
     @DisplayName("A cotacao tem dez casas decimais")
     void priceHasTenDecimals() {
-        assertEquals(FormulaQuoteSource.PRICE_SCALE,
-                source.fetch(LocalDate.of(2026, 3, 9)).price().scale());
+        assertEquals(10, source.fetch(LocalDate.of(2026, 3, 9)).price().scale());
     }
 
     @Test
@@ -107,16 +106,30 @@ class FormulaQuoteSourceTest {
     }
 
     @Test
-    @DisplayName("A valorizacao e log10(25 * n)")
-    void appreciationFollowsTheFormula() {
-        for (int dayIndex : new int[]{1, 2, 30, 365, 10000}) {
-            LocalDate date = FormulaQuoteSource.EPOCH.plusDays(dayIndex - 1L);
-            BigDecimal expected = BigDecimal.valueOf(Math.log10(25.0 * dayIndex))
-                    .setScale(FormulaQuoteSource.PRICE_SCALE, RoundingMode.HALF_UP);
-            BigDecimal actual = source.fetch(date).price()
-                    .subtract(BASE).subtract(fluctuationOn(date));
-            assertEquals(expected, actual, "valorizacao no dia " + dayIndex);
-        }
+    @DisplayName("A formula produz os valores esperados em dias conhecidos")
+    void producesKnownPrices() {
+        // Valores fixados: se a formula mudar sem querer, estes falham. Nao sao
+        // derivados do proprio codigo, ao contrario de uma comparacao com a
+        // expressao que se quer verificar, que passaria sempre.
+        assertEquals(new BigDecimal("12.1379400087"), priceOnDay(1), "dia 1");
+        assertEquals(new BigDecimal("12.0289700043"), priceOnDay(2), "dia 2");
+        assertEquals(new BigDecimal("14.2250612634"), priceOnDay(30), "dia 30");
+        assertEquals(new BigDecimal("15.6902328731"), priceOnDay(365), "dia 365");
+    }
+
+    private BigDecimal priceOnDay(int dayIndex) {
+        return source.fetch(FormulaQuoteSource.EPOCH.plusDays(dayIndex - 1L)).price();
+    }
+
+    @Test
+    @DisplayName("O indice de dia e zero fora da serie, em vez de falhar")
+    void dayIndexIsZeroBeforeTheEpoch() {
+        // O relatorio exibe este indice como informacao; o servidor de cotacoes
+        // cobre datas anteriores a serie da formula e uma movimentacao nessas
+        // datas precisa aparecer assim mesmo.
+        assertEquals(0, FormulaQuoteSource.dayIndexOrZero(FormulaQuoteSource.EPOCH.minusDays(1)));
+        assertEquals(0, FormulaQuoteSource.dayIndexOrZero(FormulaQuoteSource.EPOCH.minusYears(1)));
+        assertEquals(1, FormulaQuoteSource.dayIndexOrZero(FormulaQuoteSource.EPOCH));
     }
 
     @Test

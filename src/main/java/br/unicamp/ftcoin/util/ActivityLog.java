@@ -38,8 +38,8 @@ import java.util.Map;
  * <p>Escrever no log nunca derruba a aplicacao: nenhum metodo declara excecao e
  * uma falha de E/S apenas desliga o arquivo, mantendo os contadores em memoria.
  * O arquivo so e criado por {@link #startSession(String)}, chamado unicamente
- * pela classe de partida — por isso a suite de testes nao gera arquivo
- * algum.</p>
+ * pela classe de partida. A suite de testes usa a sobrecarga que recebe o
+ * caminho e grava apenas dentro de um diretorio temporario.</p>
  */
 public final class ActivityLog {
 

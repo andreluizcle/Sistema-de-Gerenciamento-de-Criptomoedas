@@ -20,6 +20,7 @@ import java.util.Locale;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Registro de execucao: arquivo, metricas e seguranca em caso de falha. */
@@ -61,7 +62,7 @@ class ActivityLogTest {
         log.errorCaught(new BusinessException("wallet.msg.invalidData"));
 
         assertFalse(log.isFileOpen(), "nenhum arquivo deveria estar aberto");
-        assertFalse(Files.exists(Paths.get("ftcoin.log")), "nao deveria criar ftcoin.log");
+        assertNull(log.file(), "nenhum arquivo associado a sessao");
         assertEquals(1, log.count("wallet.create"), "os contadores continuam funcionando");
     }
 
@@ -151,6 +152,8 @@ class ActivityLogTest {
     void endSessionWithoutStartSessionIsHarmless() {
         assertDoesNotThrow(() -> log.endSession());
         assertDoesNotThrow(() -> log.endSession());
+        assertFalse(log.isFileOpen(), "nenhum arquivo aberto");
+        assertEquals(0, log.count("session.metrics"), "nenhuma metrica gravada");
     }
 
     @Test
@@ -158,16 +161,20 @@ class ActivityLogTest {
     void theLogLineIsIndependentOfTheLocale() throws IOException {
         // O arquivo e lido por quem desenvolve e por ferramentas de texto; se o
         // separador decimal seguisse o menu, duas execucoes nao se comparariam.
-        MessageProvider.getInstance().setLocale(Locale.forLanguageTag("pt-BR"));
-        log.startSession("MEMORY", logFile());
-        log.oracleFetched(DAY, new BigDecimal("12.75"), 1_000L);
+        for (String tag : new String[]{"pt-BR", "en-US", "es-ES"}) {
+            log.endSession();
+            MessageProvider.getInstance().setLocale(Locale.forLanguageTag(tag));
+            log.startSession("MEMORY", tempDir.resolve(tag + ".log"));
+            log.oracleFetched(DAY, new BigDecimal("12.75"), 1_000L);
 
-        String line = lines(logFile()).stream()
-                .filter(text -> text.contains("oracle.fetch"))
-                .findFirst()
-                .orElseThrow();
+            String line = lines(tempDir.resolve(tag + ".log")).stream()
+                    .filter(text -> text.contains("oracle.fetch"))
+                    .findFirst()
+                    .orElseThrow();
 
-        assertTrue(line.contains("price=12.75"), "separador decimal deveria ser ponto: " + line);
-        assertTrue(line.contains("INFO"), line);
+            assertTrue(line.contains("price=12.75"),
+                    "em " + tag + " o separador decimal deveria continuar sendo ponto: " + line);
+            assertTrue(line.contains("INFO"), line);
+        }
     }
 }

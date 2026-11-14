@@ -11,7 +11,7 @@ import java.util.Random;
 /**
  * Cotacao calculada pela formula do projeto, para qualquer data.
  *
- * <p>Reproduz a simulacao de {@code Docs/FTCoinApuracaoResultado.ods}:</p>
+ * <p>Reproduz a simulacao da planilha de referencia fornecida pelo professor:</p>
  * <pre>
  *   cotacao(n) = 10,00 + flutuacao(n) + log10(25 * n)
  * </pre>

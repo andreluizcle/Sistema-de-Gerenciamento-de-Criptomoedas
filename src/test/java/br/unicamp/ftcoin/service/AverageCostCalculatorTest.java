@@ -172,6 +172,9 @@ class AverageCostCalculatorTest {
         WalletResult fromShuffled = calculatorFor(ReferenceSpreadsheet.quoteSource())
                 .calculate(shuffled, ReferenceSpreadsheet.day(10));
 
+        // Comparar as duas apuracoes nao basta: ambas poderiam estar zeradas.
+        assertAverageCost("13.1667075089", fromShuffled.averageCost(), "custo medio");
+        assertMoney("-897.16", fromShuffled.accumulatedResult(), "resultado acumulado");
         assertEquals(fromOrdered.averageCost(), fromShuffled.averageCost(), "custo medio");
         assertEquals(fromOrdered.accumulatedResult(), fromShuffled.accumulatedResult(), "resultado");
     }
@@ -203,6 +206,22 @@ class AverageCostCalculatorTest {
         AverageCostCalculator calculator = calculatorFor(source);
         assertThrows(IllegalStateException.class,
                 () -> calculator.calculate(transactions, date));
+    }
+
+    @Test
+    @DisplayName("Movimentacao anterior a serie da formula ainda e apurada")
+    void handlesDateBeforeTheFormulaSeries() {
+        // O servidor de cotacoes cobre datas anteriores a 2026; o indice de dia
+        // exibido no relatorio e so informacao e nao pode abortar a apuracao.
+        LocalDate antes = LocalDate.of(2025, 12, 31);
+        StubQuoteSource source = new StubQuoteSource().put(antes, "9.50");
+        List<Transaction> transactions = List.of(
+                new Transaction(1, 1, antes, OperationType.BUY, new BigDecimal("100")));
+
+        WalletResult result = calculatorFor(source).calculate(transactions, antes);
+
+        assertEquals(0, result.days().get(0).dayIndex(), "indice fora da serie");
+        assertMoney("950.00", result.costBalance(), "saldo ao custo medio");
     }
 
     @Test

@@ -69,13 +69,18 @@ class WalletServiceTest {
     @Test
     @DisplayName("Relatorio 1: ordenado por identificador")
     void listsOrderedById() {
-        add("Carla");
+        // Excluir a primeira e incluir outra faz a ordem de armazenamento do DAO
+        // deixar de coincidir com a ordem dos identificadores. Sem isso o teste
+        // passaria mesmo que o servico nao ordenasse nada.
+        Wallet descartada = add("Carla");
         add("Ana");
         add("Bruno");
+        service.delete(descartada.getId());
+        add("Diego");
 
         List<Wallet> wallets = service.listById();
 
-        assertEquals(List.of(1, 2, 3), wallets.stream().map(Wallet::getId).toList());
+        assertEquals(List.of(2, 3, 4), wallets.stream().map(Wallet::getId).toList());
     }
 
     @Test

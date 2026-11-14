@@ -15,6 +15,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -148,6 +149,23 @@ class ApiQuoteSourceTest {
     }
 
     @Test
+    @DisplayName("Lista nula sem mensagem de erro vira erro de protocolo")
+    void reportsNullListWithoutError() {
+        // Caminho distinto do da recusa de credenciais, em que a lista tambem
+        // vem nula mas acompanhada de mensagem.
+        try (FakeQuoteServer server = FakeQuoteServer.replying(new NetworkResponse(null, null))) {
+            ApiQuoteSource source = sourceFor(server.port());
+
+            QuoteUnavailableException failure =
+                    assertThrows(QuoteUnavailableException.class, () -> source.fetch(DAY));
+
+            assertEquals("error.oracle.protocol", failure.getMessageKey());
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @Test
     @DisplayName("Resposta fora do protocolo vira erro de protocolo")
     void reportsUnexpectedResponse() throws IOException {
         try (FakeQuoteServer server = FakeQuoteServer.replyingGarbage()) {
@@ -167,7 +185,7 @@ class ApiQuoteSourceTest {
             ApiQuoteSource source = sourceFor(server.port());
 
             assertTrue(source.fetchBetween(DAY.plusDays(5), DAY).isEmpty());
-            assertEquals(null, server.lastRequest(), "nao deveria ter ido ate o servidor");
+            assertNull(server.lastRequest(), "nao deveria ter ido ate o servidor");
         }
     }
 }

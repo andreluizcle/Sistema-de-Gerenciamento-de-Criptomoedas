@@ -17,7 +17,7 @@ import java.util.TreeMap;
 /**
  * Apuracao de ganhos e perdas por custo medio ponderado.
  *
- * <p>Reproduz a planilha de referencia {@code Docs/FTCoinApuracaoResultado.ods}.
+ * <p>Reproduz a planilha de apuracao de referencia fornecida pelo professor.
  * Percorrendo os dias com movimentacao em ordem cronologica:</p>
  * <pre>
  *   saldo(n)      = saldo(n-1) + comprado(n) - vendido(n)

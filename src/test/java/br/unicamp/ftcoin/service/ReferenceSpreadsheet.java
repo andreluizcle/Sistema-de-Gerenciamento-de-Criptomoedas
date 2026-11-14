@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A simulacao de {@code Docs/FTCoinApuracaoResultado.ods}, transcrita.
+ * A simulacao da planilha de apuracao fornecida pelo professor, transcrita.
  *
  * <p>Sao os 30 dias de 01/01/2026 a 30/01/2026 com as cotacoes que a planilha
  * tem gravadas, truncadas para as dez casas usadas pelo sistema, mais as compras

@@ -32,7 +32,7 @@ public class StubQuoteSource implements QuoteSource {
         fetchCount++;
         BigDecimal price = prices.get(date);
         if (price == null) {
-            throw new QuoteUnavailableException("error.oracle.dateBeforeEpoch");
+            throw new QuoteUnavailableException("error.oracle.noQuote");
         }
         return new Quote(date, price);
     }

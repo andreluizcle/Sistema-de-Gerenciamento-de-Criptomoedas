@@ -18,6 +18,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -55,6 +57,9 @@ class MessageProviderTest {
     void bundlesHaveTheSameKeys() throws IOException {
         Set<String> reference = new TreeSet<>(load("message_pt_BR.properties").stringPropertyNames());
         for (String bundle : BUNDLES) {
+            if (bundle.equals("message_pt_BR.properties")) {
+                continue;   // e a propria referencia
+            }
             Set<String> keys = new TreeSet<>(load(bundle).stringPropertyNames());
             assertEquals(reference, keys, "chaves divergentes em " + bundle);
         }
@@ -68,7 +73,7 @@ class MessageProviderTest {
         for (String bundle : BUNDLES) {
             Properties properties = load(bundle);
             for (String key : properties.stringPropertyNames()) {
-                assertTrue(!properties.getProperty(key).contains("R$"),
+                assertFalse(properties.getProperty(key).contains("R$"),
                         "simbolo de moeda em " + bundle + " na chave " + key);
             }
         }
@@ -106,7 +111,7 @@ class MessageProviderTest {
         String englishDate = messages.date(date);
         String englishNumber = messages.quantity(value);
 
-        assertTrue(!portugueseDate.equals(englishDate),
+        assertNotEquals(portugueseDate, englishDate,
                 "a data deveria mudar com o idioma: " + portugueseDate + " / " + englishDate);
         assertTrue(portugueseNumber.contains(","),
                 "separador decimal portugues: " + portugueseNumber);
@@ -129,8 +134,28 @@ class MessageProviderTest {
         messages.setLocale(SPANISH);
         String spanish = messages.get("menu.main.1");
 
-        assertTrue(!portuguese.equals(spanish),
+        assertNotEquals(portuguese, spanish,
                 "o menu deveria mudar de idioma: " + portuguese + " / " + spanish);
+    }
+
+    @Test
+    @DisplayName("Nenhuma chave usada pelos menus falta em nenhum idioma")
+    void everyMenuKeyResolvesInEveryLocale() {
+        // As telas montam as chaves de menu concatenando o numero da opcao, entao
+        // uma chave ausente degradaria silenciosamente para !menu.wallet.4!.
+        List<String> keys = List.of(
+                "menu.main.1", "menu.main.2", "menu.main.3", "menu.main.4", "menu.main.5",
+                "menu.wallet.1", "menu.wallet.2", "menu.wallet.3", "menu.wallet.4", "menu.wallet.0",
+                "menu.transaction.1", "menu.transaction.2", "menu.transaction.3", "menu.transaction.0",
+                "menu.report.1", "menu.report.2", "menu.report.3", "menu.report.4", "menu.report.5",
+                "menu.report.0", "menu.help.1", "menu.help.2", "menu.help.3", "menu.help.0");
+        for (Locale locale : List.of(PORTUGUESE, ENGLISH, SPANISH)) {
+            messages.setLocale(locale);
+            for (String key : keys) {
+                assertFalse(messages.get(key).startsWith("!"),
+                        "chave ausente em " + locale + ": " + key);
+            }
+        }
     }
 
     @Test

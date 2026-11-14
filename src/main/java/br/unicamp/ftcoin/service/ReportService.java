@@ -38,8 +38,17 @@ public class ReportService {
      * nao no dia da ultima operacao.</p>
      */
     public WalletResult resultOf(int walletId) {
+        return resultOf(walletId, LocalDate.now());
+    }
+
+    /**
+     * Apuracao com a data de valoracao informada.
+     *
+     * <p>Existe para que a apuracao possa ser verificada sem depender do relogio:
+     * o calculo ja recebe a data, e fixa-la aqui torna o resultado reproduzivel.</p>
+     */
+    public WalletResult resultOf(int walletId, LocalDate valuationDate) {
         long started = System.nanoTime();
-        LocalDate valuationDate = LocalDate.now();
         List<Transaction> history = transactionService.historyOf(walletId);
         warmUpFor(history, valuationDate);
         WalletResult result = calculator.calculate(history, valuationDate);

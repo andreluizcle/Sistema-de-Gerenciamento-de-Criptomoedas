@@ -23,6 +23,8 @@ class ReportServiceTest {
     private static final LocalDate FIRST = LocalDate.of(2026, 3, 1);
     private static final LocalDate MIDDLE = LocalDate.of(2026, 3, 5);
     private static final LocalDate LAST = LocalDate.of(2026, 3, 10);
+    /** Fora do intervalo das movimentacoes, para ser buscada a parte. */
+    private static final LocalDate VALUATION = LocalDate.of(2026, 4, 1);
 
     private StubQuoteSource source;
     private TransactionDAO transactionDAO;
@@ -34,7 +36,7 @@ class ReportServiceTest {
                 .put(FIRST, "10.00")
                 .put(MIDDLE, "12.00")
                 .put(LAST, "15.00")
-                .put(LocalDate.now(), "20.00");
+                .put(VALUATION, "20.00");
         transactionDAO = new MemoryTransactionDAO();
         OracleService oracleService = new OracleService(source);
         TransactionService transactionService = new TransactionService(transactionDAO, oracleService);
@@ -54,7 +56,7 @@ class ReportServiceTest {
         record(MIDDLE, OperationType.BUY, "100");
         record(LAST, OperationType.SELL, "50");
 
-        WalletResult result = reportService.resultOf(WALLET);
+        WalletResult result = reportService.resultOf(WALLET, VALUATION);
 
         assertEquals(1, source.rangeCount(), "uma consulta por intervalo");
         assertEquals(1, source.fetchCount(),
@@ -65,7 +67,7 @@ class ReportServiceTest {
     @Test
     @DisplayName("Carteira sem movimentacao nao consulta intervalo algum")
     void doesNotWarmUpAnEmptyWallet() {
-        WalletResult result = reportService.resultOf(WALLET);
+        WalletResult result = reportService.resultOf(WALLET, VALUATION);
 
         assertEquals(0, source.rangeCount(), "nao ha intervalo a aquecer");
         assertTrue(result.days().isEmpty(), "serie diaria vazia");
@@ -77,8 +79,8 @@ class ReportServiceTest {
         record(FIRST, OperationType.BUY, "100");
         record(LAST, OperationType.SELL, "40");
 
-        reportService.resultOf(WALLET);
-        reportService.resultOf(WALLET);
+        reportService.resultOf(WALLET, VALUATION);
+        reportService.resultOf(WALLET, VALUATION);
 
         assertEquals(1, source.rangeCount(), "o segundo relatorio nao volta ao oraculo");
         assertEquals(1, source.fetchCount(), "a data de valoracao tambem fica em cache");
