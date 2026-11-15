@@ -40,8 +40,19 @@ ganhos e perdas por **custo médio ponderado**.
 
 ```bash
 mvn clean package
-java -jar target/ftcoin.jar
+java -cp "target/ftcoin.jar:lib/*" br.unicamp.ftcoin.Start
 ```
+
+No Windows o separador do classpath é `;`:
+
+```cmd
+java -cp "target\ftcoin.jar;lib\*" br.unicamp.ftcoin.Start
+```
+
+O jar é empacotado sem as dependências, então `java -jar target/ftcoin.jar` serve
+apenas para o modo em memória. Em MariaDB ele inicia normalmente — a conexão é
+aberta só quando é usada — e falha na **primeira operação**, com
+`No suitable driver found`. É por isso que o classpath acima inclui `lib/`.
 
 Para rodar sem empacotar:
 
@@ -82,21 +93,37 @@ mvn test
 
 O relatório de cobertura sai em `target/site/jacoco/index.html`.
 
+### Arquivos que o programa escreve
+
+`ftcoin.log`, o registro de execução, e `ftcoin-report.txt`, quando um relatório é
+exportado. Os dois nascem no diretório corrente e estão no `.gitignore`.
+
 ---
 
-## Banco de dados
+## Configuração
 
-A persistência é escolhida na partida. **Em memória** não exige configuração e é o
-modo usado nos testes e na demonstração. **MariaDB** exige um arquivo `.env` na
-raiz do projeto, feito a partir de `env.example`:
+Na partida o programa faz três perguntas: idioma, persistência e origem das
+cotações. As opções **em memória** e **fórmula local** não exigem configuração
+nenhuma, e são as usadas nos testes e na demonstração.
+
+As outras duas — **MariaDB** e **API de cotações** — leem um arquivo `.env` na raiz
+do projeto, feito a partir de `env.example`:
 
 ```bash
-cp env.example .env   # e preencha DB_PASSWORD
+cp env.example .env
 ```
 
-O arquivo `.env` está no `.gitignore` e nunca deve ser versionado. O servidor da
-faculdade só responde dentro da intranet. A estrutura das tabelas está em
-`database/POO2_2s26_B03.sql`.
+São dois blocos independentes, cada um com a sua senha:
+
+| Bloco | Chaves | Para que serve |
+|---|---|---|
+| Banco | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | persistência em MariaDB |
+| Oráculo | `ORACLE_HOST`, `ORACLE_PORT`, `ORACLE_GROUP`, `ORACLE_PASSWORD`, `ORACLE_TIMEOUT_MS` | cotações pelo servidor da faculdade |
+
+Preencher só um dos blocos é suficiente para usar só aquele recurso. O arquivo
+`.env` está no `.gitignore` e nunca deve ser versionado; nenhuma credencial aparece
+no código. Os dois servidores são os da faculdade e só respondem dentro da
+intranet. A estrutura das tabelas está em `database/POO2_2s26_B03.sql`.
 
 ---
 
@@ -107,14 +134,14 @@ negócio e **DAO** para o acesso a dados.
 
 ```
 src/main/java/br/unicamp/ftcoin/
-├── Start.java          Ponto de entrada: escolhe idioma e persistência e inicia o menu
+├── Start.java          Ponto de entrada: escolhe idioma, persistência e fonte de cotação
 ├── dto/                Objetos de transferência (Wallet, Transaction, Quote, ...)
 ├── dao/                Contratos selados e as duas implementações, fábrica e conexão
 ├── oracle/             Origem das cotações (fórmula local ou API do servidor)
 ├── service/            Regras de negócio e apuração por custo médio
 ├── view/               Telas de linha de comando, com cores
 ├── controller/         Orquestração e fábrica de controladores
-└── util/               Console, .env, mensagens, registro de execução e impressão
+└── util/               Console, .env, mensagens, registro de execução, impressão e exceções
 
 src/main/java/
 └── network/            Classes de protocolo da API do professor — ver abaixo
@@ -146,12 +173,15 @@ toda a sessão, em vez de abrir e fechar uma por operação. `MessageProvider`
 também é Singleton: guarda estado com ciclo de vida — idioma, bundle e
 formatadores — que precisa existir uma vez só.
 
-**Oráculo.** A cotação de qualquer data é calculada pela fórmula do projeto
-(`10,00 + flutuação + log10(25·n)`), de forma determinística: a mesma data
-devolve sempre o mesmo valor. `OracleService` mantém um cache em memória, então
-cada data é consultada na fonte uma única vez. `QuoteSource` **não** é selada, de
-propósito: o conjunto de fontes de cotação é aberto, e uma implementação sobre
-API HTTP entra sem alterar mais nada.
+**Oráculo.** A origem das cotações é escolhida na partida. A **fórmula local** do
+projeto (`10,00 + flutuação + log10(25·n)`) é determinística: a mesma data devolve
+sempre o mesmo valor, sem depender de rede. `OracleService` mantém um cache em
+memória, então cada data é consultada na fonte uma única vez.
+
+`QuoteSource` **não** é selada, ao contrário dos contratos DAO, e essa abertura já
+se pagou: a segunda fonte, `ApiQuoteSource`, entrou sem alterar nada do que já
+existia. Quem monta uma ou outra é `QuoteSourceType.create()`, o equivalente de
+`DAOFactory.of` para o oráculo.
 
 **API de cotações.** O oráculo pode vir da fórmula local ou do servidor da faculdade, escolhido
 na partida. A API **não é REST e não usa JSON nem XML**: é um servidor TCP que troca objetos Java
@@ -167,11 +197,24 @@ Somente `ApiQuoteSource` importa esse pacote; o resto do sistema trabalha com `Q
 Como a consulta é por intervalo, `OracleService.warmUp` traz de uma vez todas as datas de que a
 apuração vai precisar: um relatório que faria um acesso por movimentação passa a fazer um só.
 
-**Apuração.** `AverageCostCalculator` reproduz a planilha
-`Docs/FTCoinApuracaoResultado.ods`. Cada compra recalcula o custo médio ponderado
-pelo saldo anterior; cada venda realiza a diferença entre a cotação do dia e esse
-custo médio. As divisões usam dez casas decimais e o arredondamento para centavos
-acontece apenas na exibição.
+**Apuração.** `AverageCostCalculator` reproduz a planilha de referência fornecida
+pelo professor. Cada compra recalcula o custo médio ponderado pelo saldo anterior;
+cada venda realiza a diferença entre a cotação do dia e esse custo médio. As
+divisões usam dez casas decimais e o arredondamento para centavos acontece apenas
+na exibição.
+
+A planilha em si não é versionada aqui, mas a série de 30 dias que ela define está
+em `src/test/java/br/unicamp/ftcoin/service/ReferenceSpreadsheet.java`, que é o que
+o teste de apuração confere linha a linha.
+
+**Limites de entrada.** Compra e venda aceitam datas de **2000-01-01 a 2126-12-31**
+(`TransactionService.MIN_DATE` e `MAX_DATE`); a consulta de cotação é independente
+disso e responde conforme a fonte escolhida. A quantidade vai até **9.999.999,999**,
+com três casas decimais, que é o que cabe no `DECIMAL(10,3)` da tabela. Uma venda é
+conferida contra o saldo **da data informada**, simulando a série cronológica
+inteira e não apenas o saldo final, de modo que uma venda retroativa impossível é
+recusada no momento do registro. Fim de entrada padrão — `Ctrl-D`, ou um roteiro
+canalizado que termina — encerra o programa como saída normal, sem rastro de pilha.
 
 ---
 
@@ -192,15 +235,18 @@ FT-Coin é cotada em reais independentemente de quem lê a tela.
 
 ## Testes
 
-76 testes cobrindo serviços, oráculo, DTOs e persistência em memória. O principal
-é `AverageCostCalculatorTest.reproducesReferenceSpreadsheet`, que replica os 30
-dias da planilha de apuração e confere saldo, custo médio, total comprado, total
+90 testes, em 10 classes, cobrindo serviços, oráculo, DTOs, utilitários e
+persistência em memória. O principal é
+`AverageCostCalculatorTest.reproducesReferenceSpreadsheet`, que replica os 30 dias
+da planilha de apuração e confere saldo, custo médio, total comprado, total
 vendido, resultado acumulado e as duas valorações do saldo.
 
 A integração com a API é testada contra um servidor falso levantado dentro do
 próprio processo de teste, em porta efêmera do loopback, falando o protocolo
 real. Nenhum teste acessa a rede da faculdade.
 
-Telas, controladores e DAO relacional ficam fora da medição de cobertura: os dois
-primeiros são laços sobre entrada e saída padrão, e o terceiro depende do MariaDB
-da faculdade, que só responde pela intranet.
+Ficam fora da medição de cobertura, conforme as exclusões do `pom.xml`: as telas,
+os controladores, `Start`, `Console` e `ReportPrinter`, que são laços sobre entrada
+e saída padrão; o acesso relacional (`Relational*` e `DatabaseConnection`), que
+depende do MariaDB da faculdade e só responde pela intranet; e o pacote `network`,
+que são classes do professor, só com getters. O que se mede é a lógica.
