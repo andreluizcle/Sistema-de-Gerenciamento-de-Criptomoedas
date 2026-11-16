@@ -95,8 +95,11 @@ O relatório de cobertura sai em `target/site/jacoco/index.html`.
 
 ### Arquivos que o programa escreve
 
-`ftcoin.log`, o registro de execução, e `ftcoin-report.txt`, quando um relatório é
-exportado. Os dois nascem no diretório corrente e estão no `.gitignore`.
+`ftcoin.log`, o registro de execução, e `ftcoin-report.txt`, que recebe o relatório
+quando a impressão é pedida e **não há impressora disponível**, ou quando o envio
+para ela falha. Havendo impressoras, o programa lista as que encontrou e pergunta
+qual usar, e nada é gravado em arquivo. Os dois nascem no diretório corrente e estão
+no `.gitignore`.
 
 ---
 
